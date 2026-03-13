@@ -1,9 +1,14 @@
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/login", "/api/notion/callback", "/api/auth/logout"];
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/api/notion/callback",
+  "/api/auth/logout",
+];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths
