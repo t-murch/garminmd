@@ -1,0 +1,35 @@
+stateDiagram-v2
+    [*] --> Drafted: User writes in Notion
+
+    Drafted --> Parsed: GarminMD reads Notion page
+    Parsed --> Resolved: Exercise names mapped to Garmin types
+    Resolved --> Pushed: Uploaded to Garmin Connect
+
+    Pushed --> OnWatch: User syncs watch
+    OnWatch --> InProgress: User starts workout
+    InProgress --> Completed: User finishes workout
+
+    Completed --> Synced: Watch syncs to Garmin Connect
+    Synced --> Pulled: GarminMD detects new activity
+    Pulled --> Matched: Activity matched to plan
+    Matched --> Analyzed: LLM compares plan vs actual
+
+    Analyzed --> [*]: Insight shown on dashboard
+
+    Pushed --> Updated: Notion page changed
+    Updated --> Parsed: Re-sync triggered
+
+    note right of Drafted
+        Lives in Notion
+        User's training page
+    end note
+
+    note right of Pushed
+        Idempotent re-upload
+        Matched by name
+    end note
+
+    note right of Analyzed
+        Auto-insight: immediate
+        Deep analysis: on demand
+    end note

@@ -1,0 +1,279 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { sql } from "drizzle-orm";
+import * as schema from "@/lib/db/schema";
+import {
+  createUser,
+  getUserByNotionId,
+  updateUserToken,
+  upsertGarminConnection,
+  getGarminConnection,
+  upsertNotionPage,
+  getNotionPages,
+  upsertGarminWorkout,
+  getGarminWorkouts,
+  cacheExercise,
+  getCachedExercise,
+} from "@/lib/db/queries";
+
+function createTestDb() {
+  const sqlite = new Database(":memory:");
+  sqlite.pragma("journal_mode = WAL");
+  sqlite.pragma("foreign_keys = ON");
+  const db = drizzle(sqlite, { schema });
+
+  // Create tables directly from SQL — mirrors the Drizzle schema
+  sqlite.exec(`
+    CREATE TABLE users (
+      id TEXT PRIMARY KEY,
+      notion_user_id TEXT NOT NULL UNIQUE,
+      notion_access_token TEXT NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
+    );
+
+    CREATE TABLE garmin_connections (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      garmin_email TEXT NOT NULL,
+      garmin_session TEXT,
+      last_sync_at INTEGER
+    );
+
+    CREATE TABLE notion_pages (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      notion_page_id TEXT NOT NULL,
+      page_title TEXT NOT NULL,
+      last_parsed_at INTEGER,
+      content_hash TEXT
+    );
+
+    CREATE TABLE garmin_workouts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      notion_page_id TEXT,
+      workout_name TEXT NOT NULL,
+      garmin_workout_id TEXT,
+      payload_hash TEXT,
+      last_pushed_at INTEGER
+    );
+
+    CREATE TABLE exercise_cache (
+      id TEXT PRIMARY KEY,
+      raw_name TEXT NOT NULL,
+      normalized_name TEXT NOT NULL UNIQUE,
+      garmin_category TEXT NOT NULL,
+      garmin_exercise_name TEXT NOT NULL,
+      garmin_category_id INTEGER NOT NULL,
+      garmin_exercise_name_id INTEGER NOT NULL,
+      resolution_method TEXT NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
+    );
+
+    CREATE TABLE garmin_activities (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      garmin_activity_id TEXT NOT NULL UNIQUE,
+      activity_type TEXT,
+      activity_name TEXT,
+      start_time INTEGER,
+      duration_seconds INTEGER,
+      raw_data TEXT,
+      matched_workout_id TEXT,
+      pulled_at INTEGER
+    );
+
+    CREATE TABLE insights (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      activity_id TEXT REFERENCES garmin_activities(id),
+      insight_type TEXT NOT NULL,
+      content TEXT NOT NULL,
+      plan_context TEXT,
+      actual_context TEXT,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
+    );
+  `);
+
+  return db;
+}
+
+type TestDb = ReturnType<typeof createTestDb>;
+
+describe("database schema and queries", () => {
+  let db: TestDb;
+
+  beforeEach(() => {
+    db = createTestDb();
+  });
+
+  describe("users", () => {
+    it("creates a user and retrieves by notion ID", async () => {
+      const { id } = await createUser("notion-123", "encrypted-token-abc", db);
+      expect(id).toBeDefined();
+
+      const user = await getUserByNotionId("notion-123", db);
+      expect(user).toBeDefined();
+      expect(user!.notionUserId).toBe("notion-123");
+      expect(user!.notionAccessToken).toBe("encrypted-token-abc");
+      expect(user!.createdAt).toBeGreaterThan(0);
+    });
+
+    it("returns undefined for non-existent notion ID", async () => {
+      const user = await getUserByNotionId("does-not-exist", db);
+      expect(user).toBeUndefined();
+    });
+
+    it("enforces unique notion user ID", async () => {
+      await createUser("notion-123", "token-1", db);
+      await expect(createUser("notion-123", "token-2", db)).rejects.toThrow();
+    });
+
+    it("updates user token", async () => {
+      const { id } = await createUser("notion-456", "old-token", db);
+      await updateUserToken(id, "new-token", db);
+
+      const user = await getUserByNotionId("notion-456", db);
+      expect(user!.notionAccessToken).toBe("new-token");
+    });
+  });
+
+  describe("garmin connections", () => {
+    it("creates and retrieves a garmin connection", async () => {
+      const { id: userId } = await createUser("notion-gc", "token", db);
+      const { id } = await upsertGarminConnection(
+        userId,
+        "enc-email",
+        "enc-session",
+        db,
+      );
+      expect(id).toBeDefined();
+
+      const conn = await getGarminConnection(userId, db);
+      expect(conn).toBeDefined();
+      expect(conn!.garminEmail).toBe("enc-email");
+      expect(conn!.garminSession).toBe("enc-session");
+    });
+
+    it("updates existing connection on second upsert", async () => {
+      const { id: userId } = await createUser("notion-gc2", "token", db);
+      await upsertGarminConnection(userId, "email-v1", "session-v1", db);
+      await upsertGarminConnection(userId, "email-v2", "session-v2", db);
+
+      const conn = await getGarminConnection(userId, db);
+      expect(conn!.garminEmail).toBe("email-v2");
+      expect(conn!.garminSession).toBe("session-v2");
+      expect(conn!.lastSyncAt).toBeGreaterThan(0);
+    });
+  });
+
+  describe("notion pages", () => {
+    it("creates and lists notion pages for a user", async () => {
+      const { id: userId } = await createUser("notion-np", "token", db);
+      await upsertNotionPage(
+        userId,
+        "page-abc",
+        "Health is Wealth",
+        "hash-1",
+        db,
+      );
+
+      const pages = await getNotionPages(userId, db);
+      expect(pages).toHaveLength(1);
+      expect(pages[0].pageTitle).toBe("Health is Wealth");
+      expect(pages[0].notionPageId).toBe("page-abc");
+    });
+
+    it("updates existing page on second upsert with same notionPageId", async () => {
+      const { id: userId } = await createUser("notion-np2", "token", db);
+      await upsertNotionPage(userId, "page-xyz", "Title v1", "hash-1", db);
+      await upsertNotionPage(userId, "page-xyz", "Title v2", "hash-2", db);
+
+      const pages = await getNotionPages(userId, db);
+      expect(pages).toHaveLength(1);
+      expect(pages[0].pageTitle).toBe("Title v2");
+      expect(pages[0].contentHash).toBe("hash-2");
+    });
+  });
+
+  describe("garmin workouts", () => {
+    it("creates and lists workouts", async () => {
+      const { id: userId } = await createUser("notion-gw", "token", db);
+      await upsertGarminWorkout(userId, "Push Day", "garmin-42", "hash-a", db);
+
+      const workouts = await getGarminWorkouts(userId, db);
+      expect(workouts).toHaveLength(1);
+      expect(workouts[0].workoutName).toBe("Push Day");
+      expect(workouts[0].garminWorkoutId).toBe("garmin-42");
+    });
+
+    it("updates existing workout on re-push (idempotent)", async () => {
+      const { id: userId } = await createUser("notion-gw2", "token", db);
+      await upsertGarminWorkout(userId, "Pull Day", "garmin-1", "hash-1", db);
+      await upsertGarminWorkout(userId, "Pull Day", "garmin-1", "hash-2", db);
+
+      const workouts = await getGarminWorkouts(userId, db);
+      expect(workouts).toHaveLength(1);
+      expect(workouts[0].payloadHash).toBe("hash-2");
+    });
+  });
+
+  describe("exercise cache", () => {
+    it("caches an exercise resolution and retrieves it", async () => {
+      await cacheExercise(
+        {
+          rawName: "DB Bench Press",
+          normalizedName: "dumbbell bench press",
+          garminCategory: "BENCH_PRESS",
+          garminExerciseName: "DUMBBELL_BENCH_PRESS",
+          garminCategoryId: 10,
+          garminExerciseNameId: 1,
+          resolutionMethod: "exact",
+        },
+        db,
+      );
+
+      const cached = await getCachedExercise("dumbbell bench press", db);
+      expect(cached).toBeDefined();
+      expect(cached!.garminCategory).toBe("BENCH_PRESS");
+      expect(cached!.garminExerciseName).toBe("DUMBBELL_BENCH_PRESS");
+      expect(cached!.resolutionMethod).toBe("exact");
+    });
+
+    it("returns undefined for uncached exercise", async () => {
+      const result = await getCachedExercise("unknown exercise", db);
+      expect(result).toBeUndefined();
+    });
+
+    it("enforces unique normalized name", async () => {
+      const entry = {
+        rawName: "Bench",
+        normalizedName: "bench press",
+        garminCategory: "BENCH_PRESS",
+        garminExerciseName: "BARBELL_BENCH_PRESS",
+        garminCategoryId: 10,
+        garminExerciseNameId: 0,
+        resolutionMethod: "exact" as const,
+      };
+
+      await cacheExercise(entry, db);
+      await expect(
+        cacheExercise({ ...entry, rawName: "Bench Press" }, db),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe("foreign key constraints", () => {
+    it("rejects garmin connection for non-existent user", async () => {
+      await expect(
+        upsertGarminConnection(
+          "fake-user-id",
+          "email",
+          "session",
+          db,
+        ),
+      ).rejects.toThrow();
+    });
+  });
+});

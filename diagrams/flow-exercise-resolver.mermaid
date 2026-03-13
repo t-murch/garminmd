@@ -1,0 +1,29 @@
+flowchart TD
+    A["Raw exercise name from Notion<br/><i>'Cable Overhead Tricep Pull'</i>"] --> B[Normalize name]
+    B --> C{"Tier 1:<br/>Exact match in<br/>exercises.json?"}
+    
+    C -->|"✓ Match found"| D["Return Garmin type<br/><i>CABLE_OVERHEAD_EXTENSION</i><br/>Cost: $0"]
+    
+    C -->|"✗ No match"| E{"Cached in<br/>exercise_cache<br/>table?"}
+    
+    E -->|"✓ Cached"| F["Return cached Garmin type<br/>Cost: $0"]
+    
+    E -->|"✗ Not cached"| G["Tier 2:<br/>LLM call with dictionary<br/>as context"]
+    
+    G --> H{"Confidence<br/>> threshold?"}
+    
+    H -->|"✓ High confidence"| I["Cache result in DB<br/>Return Garmin type<br/>Cost: ~$0.001"]
+    
+    H -->|"✗ Low confidence"| J["Tier 3:<br/>Show user in UI<br/><i>'Best match: SPLIT_SQUAT<br/>Accept?'</i>"]
+    
+    J -->|"User accepts"| K["Cache user choice<br/>Return Garmin type"]
+    J -->|"User searches"| L["User picks from<br/>full exercise list"]
+    L --> K
+    J -->|"User skips"| M["Upload as generic step<br/>with text description"]
+
+    style A fill:#f3e8ff,stroke:#7c3aed
+    style D fill:#dcfce7,stroke:#16a34a
+    style F fill:#dcfce7,stroke:#16a34a
+    style I fill:#dcfce7,stroke:#16a34a
+    style K fill:#dcfce7,stroke:#16a34a
+    style M fill:#fef3c7,stroke:#d97706

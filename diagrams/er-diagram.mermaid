@@ -1,0 +1,79 @@
+erDiagram
+    users {
+        text id PK
+        text notion_user_id UK
+        text notion_access_token "encrypted"
+        text created_at
+    }
+
+    garmin_connections {
+        text id PK
+        text user_id FK
+        text garmin_email "encrypted"
+        text garmin_session "encrypted"
+        text last_sync_at
+    }
+
+    notion_pages {
+        text id PK
+        text user_id FK
+        text notion_page_id
+        text page_title
+        text last_parsed_at
+        text content_hash
+    }
+
+    garmin_workouts {
+        text id PK
+        text user_id FK
+        text notion_page_id FK
+        text workout_name
+        text garmin_workout_id
+        text payload_hash
+        text last_pushed_at
+    }
+
+    garmin_activities {
+        text id PK
+        text user_id FK
+        text garmin_activity_id UK
+        text activity_type
+        text activity_name
+        text start_time
+        int duration_seconds
+        text raw_data "JSON"
+        text matched_workout_id FK
+        text pulled_at
+    }
+
+    insights {
+        text id PK
+        text user_id FK
+        text activity_id FK
+        text insight_type "auto | deep"
+        text content
+        text plan_context "JSON"
+        text actual_context "JSON"
+        text created_at
+    }
+
+    exercise_cache {
+        text id PK
+        text raw_name
+        text normalized_name UK
+        text garmin_category
+        text garmin_exercise_name
+        int garmin_category_id
+        int garmin_exercise_name_id
+        text resolution_method
+        text created_at
+    }
+
+    users ||--o{ garmin_connections : "has"
+    users ||--o{ notion_pages : "connects"
+    users ||--o{ garmin_workouts : "creates"
+    users ||--o{ garmin_activities : "records"
+    users ||--o{ insights : "receives"
+    notion_pages ||--o{ garmin_workouts : "sources"
+    garmin_workouts ||--o{ garmin_activities : "matched to"
+    garmin_activities ||--o{ insights : "triggers"
