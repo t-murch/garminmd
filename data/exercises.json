@@ -1,0 +1,704 @@
+[
+  {
+    "name": "Barbell Bench Press",
+    "primaryMuscle": "Chest",
+    "equipment": "Barbell",
+    "garminCategory": "BENCH_PRESS",
+    "garminExerciseName": "BARBELL_BENCH_PRESS",
+    "garminCategoryId": 10,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Dumbbell Bench Press",
+    "primaryMuscle": "Chest",
+    "equipment": "Dumbbell",
+    "garminCategory": "BENCH_PRESS",
+    "garminExerciseName": "DUMBBELL_BENCH_PRESS",
+    "garminCategoryId": 10,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Incline Dumbbell Bench Press",
+    "primaryMuscle": "Chest",
+    "equipment": "Dumbbell",
+    "garminCategory": "BENCH_PRESS",
+    "garminExerciseName": "INCLINE_DUMBBELL_BENCH_PRESS",
+    "garminCategoryId": 10,
+    "garminExerciseNameId": 2
+  },
+  {
+    "name": "Decline Barbell Bench Press",
+    "primaryMuscle": "Chest",
+    "equipment": "Barbell",
+    "garminCategory": "BENCH_PRESS",
+    "garminExerciseName": "DECLINE_BARBELL_BENCH_PRESS",
+    "garminCategoryId": 10,
+    "garminExerciseNameId": 3
+  },
+  {
+    "name": "Close Grip Barbell Bench Press",
+    "primaryMuscle": "Triceps",
+    "equipment": "Barbell",
+    "garminCategory": "BENCH_PRESS",
+    "garminExerciseName": "CLOSE_GRIP_BARBELL_BENCH_PRESS",
+    "garminCategoryId": 10,
+    "garminExerciseNameId": 4
+  },
+  {
+    "name": "Incline Barbell Bench Press",
+    "primaryMuscle": "Chest",
+    "equipment": "Barbell",
+    "garminCategory": "BENCH_PRESS",
+    "garminExerciseName": "INCLINE_BARBELL_BENCH_PRESS",
+    "garminCategoryId": 10,
+    "garminExerciseNameId": 5
+  },
+  {
+    "name": "Dumbbell Fly",
+    "primaryMuscle": "Chest",
+    "equipment": "Dumbbell",
+    "garminCategory": "FLYE",
+    "garminExerciseName": "DUMBBELL_FLYE",
+    "garminCategoryId": 26,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Incline Dumbbell Fly",
+    "primaryMuscle": "Chest",
+    "equipment": "Dumbbell",
+    "garminCategory": "FLYE",
+    "garminExerciseName": "INCLINE_DUMBBELL_FLYE",
+    "garminCategoryId": 26,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Cable Crossover",
+    "primaryMuscle": "Chest",
+    "equipment": "Cable",
+    "garminCategory": "FLYE",
+    "garminExerciseName": "CABLE_CROSSOVER",
+    "garminCategoryId": 26,
+    "garminExerciseNameId": 2
+  },
+  {
+    "name": "Cable Fly",
+    "primaryMuscle": "Chest",
+    "equipment": "Cable",
+    "garminCategory": "FLYE",
+    "garminExerciseName": "CABLE_FLYE",
+    "garminCategoryId": 26,
+    "garminExerciseNameId": 3
+  },
+  {
+    "name": "Tricep Pressdown",
+    "primaryMuscle": "Triceps",
+    "equipment": "Cable",
+    "garminCategory": "TRICEPS_EXTENSION",
+    "garminExerciseName": "TRICEPS_PRESSDOWN",
+    "garminCategoryId": 74,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Cable Overhead Tricep Extension",
+    "primaryMuscle": "Triceps",
+    "equipment": "Cable",
+    "garminCategory": "TRICEPS_EXTENSION",
+    "garminExerciseName": "CABLE_OVERHEAD_TRICEPS_EXTENSION",
+    "garminCategoryId": 74,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Skull Crusher",
+    "primaryMuscle": "Triceps",
+    "equipment": "EZ Bar",
+    "garminCategory": "TRICEPS_EXTENSION",
+    "garminExerciseName": "LYING_TRICEPS_EXTENSION",
+    "garminCategoryId": 74,
+    "garminExerciseNameId": 2
+  },
+  {
+    "name": "Dumbbell Tricep Kickback",
+    "primaryMuscle": "Triceps",
+    "equipment": "Dumbbell",
+    "garminCategory": "TRICEPS_EXTENSION",
+    "garminExerciseName": "DUMBBELL_KICKBACK",
+    "garminCategoryId": 74,
+    "garminExerciseNameId": 3
+  },
+  {
+    "name": "Dip",
+    "primaryMuscle": "Triceps",
+    "equipment": "Bodyweight",
+    "garminCategory": "TRICEPS_EXTENSION",
+    "garminExerciseName": "BENCH_DIP",
+    "garminCategoryId": 74,
+    "garminExerciseNameId": 4
+  },
+  {
+    "name": "Lat Pulldown",
+    "primaryMuscle": "Back",
+    "equipment": "Cable",
+    "garminCategory": "LAT_PULL",
+    "garminExerciseName": "LAT_PULLDOWN",
+    "garminCategoryId": 40,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Wide Grip Lat Pulldown",
+    "primaryMuscle": "Back",
+    "equipment": "Cable",
+    "garminCategory": "LAT_PULL",
+    "garminExerciseName": "WIDE_GRIP_LAT_PULLDOWN",
+    "garminCategoryId": 40,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Close Grip Lat Pulldown",
+    "primaryMuscle": "Back",
+    "equipment": "Cable",
+    "garminCategory": "LAT_PULL",
+    "garminExerciseName": "CLOSE_GRIP_LAT_PULLDOWN",
+    "garminCategoryId": 40,
+    "garminExerciseNameId": 2
+  },
+  {
+    "name": "Cable Row",
+    "primaryMuscle": "Back",
+    "equipment": "Cable",
+    "garminCategory": "ROW",
+    "garminExerciseName": "SEATED_CABLE_ROW",
+    "garminCategoryId": 58,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Barbell Row",
+    "primaryMuscle": "Back",
+    "equipment": "Barbell",
+    "garminCategory": "ROW",
+    "garminExerciseName": "BARBELL_ROW",
+    "garminCategoryId": 58,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Dumbbell Row",
+    "primaryMuscle": "Back",
+    "equipment": "Dumbbell",
+    "garminCategory": "ROW",
+    "garminExerciseName": "DUMBBELL_ROW",
+    "garminCategoryId": 58,
+    "garminExerciseNameId": 2
+  },
+  {
+    "name": "Single Arm Cable Row",
+    "primaryMuscle": "Back",
+    "equipment": "Cable",
+    "garminCategory": "ROW",
+    "garminExerciseName": "SINGLE_ARM_CABLE_ROW",
+    "garminCategoryId": 58,
+    "garminExerciseNameId": 3
+  },
+  {
+    "name": "T-Bar Row",
+    "primaryMuscle": "Back",
+    "equipment": "Barbell",
+    "garminCategory": "ROW",
+    "garminExerciseName": "T_BAR_ROW",
+    "garminCategoryId": 58,
+    "garminExerciseNameId": 4
+  },
+  {
+    "name": "Pull Up",
+    "primaryMuscle": "Back",
+    "equipment": "Bodyweight",
+    "garminCategory": "PULL_UP",
+    "garminExerciseName": "PULL_UP",
+    "garminCategoryId": 56,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Chin Up",
+    "primaryMuscle": "Back",
+    "equipment": "Bodyweight",
+    "garminCategory": "PULL_UP",
+    "garminExerciseName": "CHIN_UP",
+    "garminCategoryId": 56,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Barbell Curl",
+    "primaryMuscle": "Biceps",
+    "equipment": "Barbell",
+    "garminCategory": "CURL",
+    "garminExerciseName": "BARBELL_CURL",
+    "garminCategoryId": 18,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Dumbbell Curl",
+    "primaryMuscle": "Biceps",
+    "equipment": "Dumbbell",
+    "garminCategory": "CURL",
+    "garminExerciseName": "DUMBBELL_CURL",
+    "garminCategoryId": 18,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Hammer Curl",
+    "primaryMuscle": "Biceps",
+    "equipment": "Dumbbell",
+    "garminCategory": "CURL",
+    "garminExerciseName": "HAMMER_CURL",
+    "garminCategoryId": 18,
+    "garminExerciseNameId": 2
+  },
+  {
+    "name": "Incline Dumbbell Curl",
+    "primaryMuscle": "Biceps",
+    "equipment": "Dumbbell",
+    "garminCategory": "CURL",
+    "garminExerciseName": "INCLINE_DUMBBELL_CURL",
+    "garminCategoryId": 18,
+    "garminExerciseNameId": 3
+  },
+  {
+    "name": "Cable Curl",
+    "primaryMuscle": "Biceps",
+    "equipment": "Cable",
+    "garminCategory": "CURL",
+    "garminExerciseName": "CABLE_CURL",
+    "garminCategoryId": 18,
+    "garminExerciseNameId": 4
+  },
+  {
+    "name": "Preacher Curl",
+    "primaryMuscle": "Biceps",
+    "equipment": "EZ Bar",
+    "garminCategory": "CURL",
+    "garminExerciseName": "PREACHER_CURL",
+    "garminCategoryId": 18,
+    "garminExerciseNameId": 5
+  },
+  {
+    "name": "EZ Bar Curl",
+    "primaryMuscle": "Biceps",
+    "equipment": "EZ Bar",
+    "garminCategory": "CURL",
+    "garminExerciseName": "EZ_BAR_CURL",
+    "garminCategoryId": 18,
+    "garminExerciseNameId": 6
+  },
+  {
+    "name": "Barbell Squat",
+    "primaryMuscle": "Quadriceps",
+    "equipment": "Barbell",
+    "garminCategory": "SQUAT",
+    "garminExerciseName": "BARBELL_BACK_SQUAT",
+    "garminCategoryId": 64,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Front Squat",
+    "primaryMuscle": "Quadriceps",
+    "equipment": "Barbell",
+    "garminCategory": "SQUAT",
+    "garminExerciseName": "BARBELL_FRONT_SQUAT",
+    "garminCategoryId": 64,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Goblet Squat",
+    "primaryMuscle": "Quadriceps",
+    "equipment": "Dumbbell",
+    "garminCategory": "SQUAT",
+    "garminExerciseName": "GOBLET_SQUAT",
+    "garminCategoryId": 64,
+    "garminExerciseNameId": 2
+  },
+  {
+    "name": "Leg Press",
+    "primaryMuscle": "Quadriceps",
+    "equipment": "Machine",
+    "garminCategory": "SQUAT",
+    "garminExerciseName": "LEG_PRESS",
+    "garminCategoryId": 64,
+    "garminExerciseNameId": 3
+  },
+  {
+    "name": "Bulgarian Split Squat",
+    "primaryMuscle": "Quadriceps",
+    "equipment": "Dumbbell",
+    "garminCategory": "SQUAT",
+    "garminExerciseName": "SPLIT_SQUAT",
+    "garminCategoryId": 64,
+    "garminExerciseNameId": 4
+  },
+  {
+    "name": "Hack Squat",
+    "primaryMuscle": "Quadriceps",
+    "equipment": "Machine",
+    "garminCategory": "SQUAT",
+    "garminExerciseName": "HACK_SQUAT",
+    "garminCategoryId": 64,
+    "garminExerciseNameId": 5
+  },
+  {
+    "name": "Conventional Deadlift",
+    "primaryMuscle": "Back",
+    "equipment": "Barbell",
+    "garminCategory": "DEADLIFT",
+    "garminExerciseName": "BARBELL_DEADLIFT",
+    "garminCategoryId": 22,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Romanian Deadlift",
+    "primaryMuscle": "Hamstrings",
+    "equipment": "Barbell",
+    "garminCategory": "DEADLIFT",
+    "garminExerciseName": "ROMANIAN_DEADLIFT",
+    "garminCategoryId": 22,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Sumo Deadlift",
+    "primaryMuscle": "Back",
+    "equipment": "Barbell",
+    "garminCategory": "DEADLIFT",
+    "garminExerciseName": "SUMO_DEADLIFT",
+    "garminCategoryId": 22,
+    "garminExerciseNameId": 2
+  },
+  {
+    "name": "Dumbbell Deadlift",
+    "primaryMuscle": "Back",
+    "equipment": "Dumbbell",
+    "garminCategory": "DEADLIFT",
+    "garminExerciseName": "DUMBBELL_DEADLIFT",
+    "garminCategoryId": 22,
+    "garminExerciseNameId": 3
+  },
+  {
+    "name": "Leg Curl",
+    "primaryMuscle": "Hamstrings",
+    "equipment": "Machine",
+    "garminCategory": "LEG_CURL",
+    "garminExerciseName": "LEG_CURL",
+    "garminCategoryId": 42,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Seated Leg Curl",
+    "primaryMuscle": "Hamstrings",
+    "equipment": "Machine",
+    "garminCategory": "LEG_CURL",
+    "garminExerciseName": "SEATED_LEG_CURL",
+    "garminCategoryId": 42,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Leg Extension",
+    "primaryMuscle": "Quadriceps",
+    "equipment": "Machine",
+    "garminCategory": "LEG_CURL",
+    "garminExerciseName": "LEG_EXTENSION",
+    "garminCategoryId": 42,
+    "garminExerciseNameId": 2
+  },
+  {
+    "name": "Overhead Press",
+    "primaryMuscle": "Shoulders",
+    "equipment": "Barbell",
+    "garminCategory": "SHOULDER_PRESS",
+    "garminExerciseName": "OVERHEAD_BARBELL_PRESS",
+    "garminCategoryId": 62,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Dumbbell Shoulder Press",
+    "primaryMuscle": "Shoulders",
+    "equipment": "Dumbbell",
+    "garminCategory": "SHOULDER_PRESS",
+    "garminExerciseName": "DUMBBELL_SHOULDER_PRESS",
+    "garminCategoryId": 62,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Arnold Press",
+    "primaryMuscle": "Shoulders",
+    "equipment": "Dumbbell",
+    "garminCategory": "SHOULDER_PRESS",
+    "garminExerciseName": "ARNOLD_PRESS",
+    "garminCategoryId": 62,
+    "garminExerciseNameId": 2
+  },
+  {
+    "name": "Machine Shoulder Press",
+    "primaryMuscle": "Shoulders",
+    "equipment": "Machine",
+    "garminCategory": "SHOULDER_PRESS",
+    "garminExerciseName": "MACHINE_SHOULDER_PRESS",
+    "garminCategoryId": 62,
+    "garminExerciseNameId": 3
+  },
+  {
+    "name": "Lateral Raise",
+    "primaryMuscle": "Shoulders",
+    "equipment": "Dumbbell",
+    "garminCategory": "LATERAL_RAISE",
+    "garminExerciseName": "DUMBBELL_LATERAL_RAISE",
+    "garminCategoryId": 41,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Cable Lateral Raise",
+    "primaryMuscle": "Shoulders",
+    "equipment": "Cable",
+    "garminCategory": "LATERAL_RAISE",
+    "garminExerciseName": "CABLE_LATERAL_RAISE",
+    "garminCategoryId": 41,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Front Raise",
+    "primaryMuscle": "Shoulders",
+    "equipment": "Dumbbell",
+    "garminCategory": "LATERAL_RAISE",
+    "garminExerciseName": "FRONT_RAISE",
+    "garminCategoryId": 41,
+    "garminExerciseNameId": 2
+  },
+  {
+    "name": "Face Pull",
+    "primaryMuscle": "Shoulders",
+    "equipment": "Cable",
+    "garminCategory": "LATERAL_RAISE",
+    "garminExerciseName": "FACE_PULL",
+    "garminCategoryId": 41,
+    "garminExerciseNameId": 3
+  },
+  {
+    "name": "Reverse Fly",
+    "primaryMuscle": "Shoulders",
+    "equipment": "Dumbbell",
+    "garminCategory": "LATERAL_RAISE",
+    "garminExerciseName": "REVERSE_FLYE",
+    "garminCategoryId": 41,
+    "garminExerciseNameId": 4
+  },
+  {
+    "name": "Upright Row",
+    "primaryMuscle": "Shoulders",
+    "equipment": "Barbell",
+    "garminCategory": "LATERAL_RAISE",
+    "garminExerciseName": "UPRIGHT_ROW",
+    "garminCategoryId": 41,
+    "garminExerciseNameId": 5
+  },
+  {
+    "name": "Barbell Shrug",
+    "primaryMuscle": "Traps",
+    "equipment": "Barbell",
+    "garminCategory": "SHRUG",
+    "garminExerciseName": "BARBELL_SHRUG",
+    "garminCategoryId": 63,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Dumbbell Shrug",
+    "primaryMuscle": "Traps",
+    "equipment": "Dumbbell",
+    "garminCategory": "SHRUG",
+    "garminExerciseName": "DUMBBELL_SHRUG",
+    "garminCategoryId": 63,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Plank",
+    "primaryMuscle": "Core",
+    "equipment": "Bodyweight",
+    "garminCategory": "PLANK",
+    "garminExerciseName": "PLANK",
+    "garminCategoryId": 54,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Side Plank",
+    "primaryMuscle": "Core",
+    "equipment": "Bodyweight",
+    "garminCategory": "PLANK",
+    "garminExerciseName": "SIDE_PLANK",
+    "garminCategoryId": 54,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Crunch",
+    "primaryMuscle": "Core",
+    "equipment": "Bodyweight",
+    "garminCategory": "CRUNCH",
+    "garminExerciseName": "CRUNCH",
+    "garminCategoryId": 16,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Cable Crunch",
+    "primaryMuscle": "Core",
+    "equipment": "Cable",
+    "garminCategory": "CRUNCH",
+    "garminExerciseName": "CABLE_CRUNCH",
+    "garminCategoryId": 16,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Hanging Leg Raise",
+    "primaryMuscle": "Core",
+    "equipment": "Bodyweight",
+    "garminCategory": "CRUNCH",
+    "garminExerciseName": "HANGING_LEG_RAISE",
+    "garminCategoryId": 16,
+    "garminExerciseNameId": 2
+  },
+  {
+    "name": "Lunge",
+    "primaryMuscle": "Quadriceps",
+    "equipment": "Bodyweight",
+    "garminCategory": "LUNGE",
+    "garminExerciseName": "LUNGE",
+    "garminCategoryId": 46,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Walking Lunge",
+    "primaryMuscle": "Quadriceps",
+    "equipment": "Dumbbell",
+    "garminCategory": "LUNGE",
+    "garminExerciseName": "WALKING_LUNGE",
+    "garminCategoryId": 46,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Reverse Lunge",
+    "primaryMuscle": "Quadriceps",
+    "equipment": "Dumbbell",
+    "garminCategory": "LUNGE",
+    "garminExerciseName": "REVERSE_LUNGE",
+    "garminCategoryId": 46,
+    "garminExerciseNameId": 2
+  },
+  {
+    "name": "Calf Raise",
+    "primaryMuscle": "Calves",
+    "equipment": "Machine",
+    "garminCategory": "CALF_RAISE",
+    "garminExerciseName": "STANDING_CALF_RAISE",
+    "garminCategoryId": 12,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Seated Calf Raise",
+    "primaryMuscle": "Calves",
+    "equipment": "Machine",
+    "garminCategory": "CALF_RAISE",
+    "garminExerciseName": "SEATED_CALF_RAISE",
+    "garminCategoryId": 12,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Hip Thrust",
+    "primaryMuscle": "Glutes",
+    "equipment": "Barbell",
+    "garminCategory": "HIP_RAISE",
+    "garminExerciseName": "BARBELL_HIP_THRUST",
+    "garminCategoryId": 32,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Glute Bridge",
+    "primaryMuscle": "Glutes",
+    "equipment": "Bodyweight",
+    "garminCategory": "HIP_RAISE",
+    "garminExerciseName": "GLUTE_BRIDGE",
+    "garminCategoryId": 32,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Push Up",
+    "primaryMuscle": "Chest",
+    "equipment": "Bodyweight",
+    "garminCategory": "PUSH_UP",
+    "garminExerciseName": "PUSH_UP",
+    "garminCategoryId": 57,
+    "garminExerciseNameId": 0
+  },
+  {
+    "name": "Diamond Push Up",
+    "primaryMuscle": "Triceps",
+    "equipment": "Bodyweight",
+    "garminCategory": "PUSH_UP",
+    "garminExerciseName": "DIAMOND_PUSH_UP",
+    "garminCategoryId": 57,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Incline Push Up",
+    "primaryMuscle": "Chest",
+    "equipment": "Bodyweight",
+    "garminCategory": "PUSH_UP",
+    "garminExerciseName": "INCLINE_PUSH_UP",
+    "garminCategoryId": 57,
+    "garminExerciseNameId": 2
+  },
+  {
+    "name": "Cable Tricep Pressdown",
+    "primaryMuscle": "Triceps",
+    "equipment": "Cable",
+    "garminCategory": "TRICEPS_EXTENSION",
+    "garminExerciseName": "CABLE_TRICEPS_PRESSDOWN",
+    "garminCategoryId": 74,
+    "garminExerciseNameId": 5
+  },
+  {
+    "name": "Cable Pec Fly",
+    "primaryMuscle": "Chest",
+    "equipment": "Cable",
+    "garminCategory": "FLYE",
+    "garminExerciseName": "CABLE_PEC_FLYE",
+    "garminCategoryId": 26,
+    "garminExerciseNameId": 4
+  },
+  {
+    "name": "EZ Bar Skull Crusher",
+    "primaryMuscle": "Triceps",
+    "equipment": "EZ Bar",
+    "garminCategory": "TRICEPS_EXTENSION",
+    "garminExerciseName": "EZ_BAR_SKULL_CRUSHER",
+    "garminCategoryId": 74,
+    "garminExerciseNameId": 6
+  },
+  {
+    "name": "Cable Overhead Tricep Pull",
+    "primaryMuscle": "Triceps",
+    "equipment": "Cable",
+    "garminCategory": "TRICEPS_EXTENSION",
+    "garminExerciseName": "CABLE_OVERHEAD_TRICEPS_EXTENSION",
+    "garminCategoryId": 74,
+    "garminExerciseNameId": 1
+  },
+  {
+    "name": "Concentration Curl",
+    "primaryMuscle": "Biceps",
+    "equipment": "Dumbbell",
+    "garminCategory": "CURL",
+    "garminExerciseName": "CONCENTRATION_CURL",
+    "garminCategoryId": 18,
+    "garminExerciseNameId": 7
+  },
+  {
+    "name": "Spider Curl",
+    "primaryMuscle": "Biceps",
+    "equipment": "Dumbbell",
+    "garminCategory": "CURL",
+    "garminExerciseName": "SPIDER_CURL",
+    "garminCategoryId": 18,
+    "garminExerciseNameId": 8
+  }
+]

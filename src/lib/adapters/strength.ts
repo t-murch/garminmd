@@ -5,7 +5,7 @@ import type {
   GarminWorkoutPayload,
   GarminWorkoutStep,
   ValidationResult,
-} from "../core/types.js";
+} from "../core/types";
 
 /** Garmin's sport type IDs (reverse-engineered) */
 const STRENGTH_SPORT_TYPE = {

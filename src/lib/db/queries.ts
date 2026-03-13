@@ -10,6 +10,15 @@ import {
 
 // ─── Users ─────────────────────────────────────────────────────
 
+export async function getUserById(
+  userId: string,
+  db: AppDatabase = getDb(),
+) {
+  return db.query.users.findFirst({
+    where: eq(users.id, userId),
+  });
+}
+
 export async function getUserByNotionId(
   notionUserId: string,
   db: AppDatabase = getDb(),

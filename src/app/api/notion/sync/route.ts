@@ -1,0 +1,76 @@
+import { NextResponse } from "next/server";
+import { createHash } from "node:crypto";
+import { getServerSession } from "@/lib/auth/session";
+import { getUserById, upsertNotionPage } from "@/lib/db/queries";
+import { decrypt } from "@/lib/utils/crypto";
+import { getPageAsMarkdown, getSharedPages } from "@/lib/notion/reader";
+import { parseMarkdown } from "@/lib/parser/markdown";
+
+export async function POST(request: Request) {
+  const session = await getServerSession();
+  if (!session.isLoggedIn) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await request.json().catch(() => null);
+  const pageId = body?.pageId;
+  if (!pageId || typeof pageId !== "string") {
+    return NextResponse.json(
+      { error: "pageId is required" },
+      { status: 400 },
+    );
+  }
+
+  const user = await getUserById(session.userId);
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  let accessToken: string;
+  try {
+    accessToken = decrypt(user.notionAccessToken);
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to decrypt Notion token. Please reconnect Notion." },
+      { status: 500 },
+    );
+  }
+
+  // Fetch the markdown content from Notion
+  let markdown: string;
+  try {
+    markdown = await getPageAsMarkdown(accessToken, pageId);
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to read page from Notion. Your token may have expired." },
+      { status: 502 },
+    );
+  }
+
+  // Parse into structured workouts
+  const workouts = parseMarkdown(markdown);
+
+  // Compute a content hash for change detection
+  const contentHash = createHash("sha256").update(markdown).digest("hex");
+
+  // Resolve page title — try to find it in the shared pages list
+  let title = "Untitled";
+  try {
+    const pages = await getSharedPages(accessToken);
+    const match = pages.find((p) => p.id === pageId);
+    if (match) title = match.title;
+  } catch {
+    // Title lookup is best-effort; don't fail the sync
+  }
+
+  // Upsert the page record
+  await upsertNotionPage(session.userId, pageId, title, contentHash);
+
+  return NextResponse.json({
+    pageId,
+    title,
+    contentHash,
+    workoutCount: workouts.length,
+    workouts,
+  });
+}

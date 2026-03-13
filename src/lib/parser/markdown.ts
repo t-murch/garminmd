@@ -2,8 +2,8 @@ import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import type { Root, Table, TableRow, Heading, Text } from "mdast";
-import { ParsedWorkout, ParsedExercise } from "../core/types.js";
-import { detectRepsFromHeader, detectRestFromHeader } from "./rest-detector.js";
+import { ParsedWorkout, ParsedExercise } from "../core/types";
+import { detectRepsFromHeader, detectRestFromHeader } from "./rest-detector";
 
 /**
  * Parse a markdown string into structured workout sessions.

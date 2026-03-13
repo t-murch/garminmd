@@ -36,6 +36,9 @@ yarn-error.log*
 # database
 garminmd.db
 *.db
+*.db-shm
+*.db-wal
+*.db-journal
 
 # vercel
 .vercel
