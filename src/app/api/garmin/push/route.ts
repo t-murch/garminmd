@@ -5,11 +5,15 @@ import { decrypt, encrypt } from "@/lib/utils/crypto";
 import {
   getGarminConnection,
   getNotionPages,
+  getUserById,
   upsertGarminConnection,
 } from "@/lib/db/queries";
 import { createGarminClient, GarminServiceError } from "@/lib/garmin/client";
 import { syncWorkoutsToGarmin, type SyncResult } from "@/lib/garmin/sync";
 import { StrengthAdapter } from "@/lib/adapters/strength";
+import { getPageAsMarkdown } from "@/lib/notion/reader";
+import { parseMarkdown } from "@/lib/parser/markdown";
+import { resolveWorkout } from "@/lib/resolver";
 import type {
   GarminWorkoutPayload,
   ResolvedWorkout,
@@ -105,22 +109,23 @@ export async function POST(request: Request) {
     );
   }
 
-  // Build Garmin workout payloads from the stored parsed workouts.
-  //
-  // In the full pipeline, this step would:
-  //   1. Re-fetch/parse the Notion page (or use cached parse data)
-  //   2. Resolve exercises (exact-match + LLM + cache)
-  //   3. Build payloads via the StrengthAdapter
-  //
-  // For now, we expect parsed + resolved workout data to be available.
-  // This will be connected once the full Notion sync + resolver pipeline
-  // is wired up. We return a clear error until then.
-  //
-  // TODO: Wire up Notion page re-parse + exercise resolution pipeline
-  const resolvedWorkouts = await getResolvedWorkoutsForPage(
-    session.userId,
-    pageId,
-  );
+  // Fetch the Notion page, parse workouts, and resolve exercises
+  let resolvedWorkouts: ResolvedWorkout[];
+  try {
+    resolvedWorkouts = await getResolvedWorkoutsForPage(
+      session.userId,
+      pageId,
+    );
+  } catch (err) {
+    if (err instanceof NotionPipelineError) {
+      return NextResponse.json({ error: err.message }, { status: 502 });
+    }
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json(
+      { error: `Failed to load workouts: ${message}` },
+      { status: 500 },
+    );
+  }
 
   if (resolvedWorkouts.length === 0) {
     return NextResponse.json(
@@ -200,26 +205,62 @@ export async function POST(request: Request) {
   });
 }
 
-// ─── Placeholder ───────────────────────────────────────────────
+// ─── Notion → Parse → Resolve Pipeline ─────────────────────────
 
 /**
- * Retrieves resolved workouts for a Notion page.
+ * Fetches a Notion page, parses its markdown tables into workouts,
+ * and resolves every exercise through the 3-tier resolver chain.
  *
- * This is a placeholder that will be replaced once the full Notion
- * sync + exercise resolution pipeline is wired up. Currently returns
- * an empty array, causing the push route to return a clear error
- * message asking the user to sync from Notion first.
+ * Steps:
+ *   1. Look up the user to get their encrypted Notion access token
+ *   2. Decrypt the token
+ *   3. Fetch the Notion page as markdown
+ *   4. Parse markdown into ParsedWorkout[]
+ *   5. Resolve each workout's exercises (exact → cache → LLM)
+ *   6. Return ResolvedWorkout[]
  *
- * When the pipeline is ready, this will:
- *   1. Read the cached page content from the DB
- *   2. Parse the markdown into ParsedWorkout[]
- *   3. Resolve exercises via the 3-tier resolver
- *   4. Return ResolvedWorkout[]
+ * Throws an error with a descriptive message if Notion fetch fails
+ * so the caller can return an appropriate HTTP status.
  */
 async function getResolvedWorkoutsForPage(
-  _userId: string,
-  _pageId: string,
+  userId: string,
+  pageId: string,
 ): Promise<ResolvedWorkout[]> {
-  // TODO: Connect to Notion page cache + parser + resolver pipeline
-  return [];
+  // 1. Get user and decrypt Notion token
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new NotionPipelineError("User not found.");
+  }
+
+  const accessToken = decrypt(user.notionAccessToken);
+
+  // 2. Fetch the Notion page as markdown
+  let markdown: string;
+  try {
+    markdown = await getPageAsMarkdown(accessToken, pageId);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new NotionPipelineError(
+      `Failed to fetch Notion page: ${message}`,
+    );
+  }
+
+  // 3. Parse markdown into structured workouts
+  const parsedWorkouts = parseMarkdown(markdown);
+
+  // 4. Resolve exercises for each workout
+  const resolved: ResolvedWorkout[] = [];
+  for (const parsed of parsedWorkouts) {
+    resolved.push(await resolveWorkout(parsed));
+  }
+
+  return resolved;
+}
+
+/** Distinguishes Notion pipeline errors from other failures. */
+class NotionPipelineError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NotionPipelineError";
+  }
 }

@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc, gte } from "drizzle-orm";
 import { getDb, type AppDatabase } from "./index";
 import {
   users,
@@ -6,6 +6,8 @@ import {
   notionPages,
   garminWorkouts,
   exerciseCache,
+  garminActivities,
+  insights,
 } from "./schema";
 
 // ─── Users ─────────────────────────────────────────────────────
@@ -220,4 +222,163 @@ export async function cacheExercise(
   const id = crypto.randomUUID();
   await db.insert(exerciseCache).values({ id, ...entry });
   return { id };
+}
+
+// ─── Garmin Activities (Phase 2) ──────────────────────────────
+
+export async function upsertGarminActivity(
+  userId: string,
+  data: {
+    garminActivityId: string;
+    activityType?: string;
+    activityName?: string;
+    startTime?: number;
+    durationSeconds?: number;
+    rawData?: string;
+    matchedWorkoutId?: string;
+  },
+  db: AppDatabase = getDb(),
+) {
+  const existing = await db.query.garminActivities.findFirst({
+    where: eq(garminActivities.garminActivityId, data.garminActivityId),
+  });
+
+  if (existing) {
+    await db
+      .update(garminActivities)
+      .set({
+        activityType: data.activityType ?? existing.activityType,
+        activityName: data.activityName ?? existing.activityName,
+        startTime: data.startTime ?? existing.startTime,
+        durationSeconds: data.durationSeconds ?? existing.durationSeconds,
+        rawData: data.rawData ?? existing.rawData,
+        matchedWorkoutId: data.matchedWorkoutId ?? existing.matchedWorkoutId,
+        pulledAt: Date.now(),
+      })
+      .where(eq(garminActivities.id, existing.id));
+    return { id: existing.id };
+  }
+
+  const id = crypto.randomUUID();
+  await db.insert(garminActivities).values({
+    id,
+    userId,
+    garminActivityId: data.garminActivityId,
+    activityType: data.activityType ?? null,
+    activityName: data.activityName ?? null,
+    startTime: data.startTime ?? null,
+    durationSeconds: data.durationSeconds ?? null,
+    rawData: data.rawData ?? null,
+    matchedWorkoutId: data.matchedWorkoutId ?? null,
+    pulledAt: Date.now(),
+  });
+  return { id };
+}
+
+export async function getGarminActivities(
+  userId: string,
+  limit = 20,
+  offset = 0,
+  db: AppDatabase = getDb(),
+) {
+  return db.query.garminActivities.findMany({
+    where: eq(garminActivities.userId, userId),
+    orderBy: desc(garminActivities.startTime),
+    limit,
+    offset,
+  });
+}
+
+export async function getGarminActivityByGarminId(
+  garminActivityId: string,
+  db: AppDatabase = getDb(),
+) {
+  return db.query.garminActivities.findFirst({
+    where: eq(garminActivities.garminActivityId, garminActivityId),
+  });
+}
+
+export async function updateActivityMatch(
+  activityDbId: string,
+  matchedWorkoutId: string,
+  db: AppDatabase = getDb(),
+) {
+  await db
+    .update(garminActivities)
+    .set({ matchedWorkoutId })
+    .where(eq(garminActivities.id, activityDbId));
+}
+
+// ─── Insights (Phase 2) ──────────────────────────────────────
+
+export async function createInsight(
+  userId: string,
+  activityId: string | null,
+  insightType: string,
+  content: string,
+  planContext?: string,
+  actualContext?: string,
+  db: AppDatabase = getDb(),
+) {
+  const id = crypto.randomUUID();
+  await db.insert(insights).values({
+    id,
+    userId,
+    activityId,
+    insightType,
+    content,
+    planContext: planContext ?? null,
+    actualContext: actualContext ?? null,
+  });
+  return { id };
+}
+
+export async function getInsights(
+  userId: string,
+  limit = 10,
+  db: AppDatabase = getDb(),
+) {
+  return db.query.insights.findMany({
+    where: eq(insights.userId, userId),
+    orderBy: desc(insights.createdAt),
+    limit,
+  });
+}
+
+export async function getInsightsByActivity(
+  activityId: string,
+  db: AppDatabase = getDb(),
+) {
+  return db.query.insights.findMany({
+    where: eq(insights.activityId, activityId),
+    orderBy: desc(insights.createdAt),
+  });
+}
+
+export async function getRecentActivitiesWithWorkouts(
+  userId: string,
+  days = 28,
+  db: AppDatabase = getDb(),
+) {
+  const cutoff = Date.now() - days * 86400000;
+
+  const activities = await db
+    .select({
+      activity: garminActivities,
+      workout: garminWorkouts,
+    })
+    .from(garminActivities)
+    .leftJoin(
+      garminWorkouts,
+      eq(garminActivities.matchedWorkoutId, garminWorkouts.id),
+    )
+    .where(
+      and(
+        eq(garminActivities.userId, userId),
+        gte(garminActivities.startTime, cutoff),
+      ),
+    )
+    .orderBy(desc(garminActivities.startTime));
+
+  return activities;
 }

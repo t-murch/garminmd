@@ -12,6 +12,30 @@ import type {
 
 // ─── Public Types ──────────────────────────────────────────────
 
+export interface GarminActivitySummary {
+  activityId: number;
+  activityName: string;
+  startTimeLocal: string;
+  startTimeGMT: string;
+  duration: number;
+  activityType: { typeKey: string; typeId: number };
+  sportTypeId: number;
+  calories: number;
+  averageHR: number | null;
+}
+
+export interface GarminActivityDetail {
+  activityId: number;
+  exerciseSets: Array<{
+    setOrder: number;
+    exerciseName: string | null;
+    category: string | null;
+    reps: number | null;
+    weight: number | null;
+    duration: number | null;
+  }>;
+}
+
 export interface GarminClient {
   /** Push a workout to Garmin Connect. Returns the Garmin-assigned workout ID. */
   pushWorkout(payload: GarminWorkoutPayload): Promise<string>;
@@ -26,6 +50,15 @@ export interface GarminClient {
   deleteWorkout(workoutId: string): Promise<void>;
   /** Export the current session tokens for storage. */
   getSessionTokens(): IGarminTokens;
+  /** Fetch recent activities from Garmin Connect. */
+  getActivities(
+    start?: number,
+    limit?: number,
+  ): Promise<GarminActivitySummary[]>;
+  /** Fetch exercise set details for a specific activity. Returns null if unavailable. */
+  getActivityDetails(
+    activityId: number,
+  ): Promise<GarminActivityDetail | null>;
 }
 
 export class GarminAuthError extends Error {
@@ -134,6 +167,70 @@ function wrapClient(
 
     getSessionTokens(): IGarminTokens {
       return gc.exportToken();
+    },
+
+    async getActivities(
+      start: number = 0,
+      limit: number = 20,
+    ): Promise<GarminActivitySummary[]> {
+      const raw = await gc.getActivities(start, limit);
+      return raw.map((a) => ({
+        activityId: a.activityId,
+        activityName: a.activityName ?? "Untitled",
+        startTimeLocal: a.startTimeLocal ?? "",
+        startTimeGMT: a.startTimeGMT ?? "",
+        duration: a.duration ?? 0,
+        activityType: {
+          typeKey: a.activityType?.typeKey ?? "unknown",
+          typeId: a.activityType?.typeId ?? 0,
+        },
+        sportTypeId: a.sportTypeId ?? 0,
+        calories: a.calories ?? 0,
+        averageHR: a.averageHR ?? null,
+      }));
+    },
+
+    async getActivityDetails(
+      activityId: number,
+    ): Promise<GarminActivityDetail | null> {
+      // The Garmin Connect API exposes exercise set data at this endpoint.
+      // The @flow-js/garmin-connect library doesn't have a dedicated method,
+      // but it provides a generic get() for arbitrary Garmin API calls.
+      try {
+        const url = `https://connect.garmin.com/activity-service/activity/${activityId}/exerciseSets`;
+        const data = await gc.get<{
+          exerciseSets?: Array<{
+            setOrder?: number;
+            exercises?: Array<{
+              exerciseName?: string;
+              category?: string;
+            }>;
+            repetitionCount?: number;
+            weight?: number;
+            duration?: number;
+          }>;
+        }>(url);
+
+        if (!data?.exerciseSets) {
+          return null;
+        }
+
+        return {
+          activityId,
+          exerciseSets: data.exerciseSets.map((s, i) => ({
+            setOrder: s.setOrder ?? i + 1,
+            exerciseName: s.exercises?.[0]?.exerciseName ?? null,
+            category: s.exercises?.[0]?.category ?? null,
+            reps: s.repetitionCount ?? null,
+            weight: s.weight ?? null,
+            duration: s.duration ?? null,
+          })),
+        };
+      } catch {
+        // Exercise set endpoint may not exist for non-strength activities
+        // or may require specific Garmin API permissions — return null gracefully
+        return null;
+      }
     },
   };
 }

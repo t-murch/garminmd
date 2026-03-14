@@ -12,8 +12,15 @@ interface Workout {
   lastPushedAt: number | null;
 }
 
+interface Activity {
+  activityName: string | null;
+  startTime: number | null;
+  matchedWorkoutId: string | null;
+}
+
 interface ThisWeekProps {
   workouts: Workout[];
+  activities?: Activity[];
 }
 
 /**
@@ -44,13 +51,21 @@ function matchDay(workoutName: string): string | null {
   return null;
 }
 
-export function ThisWeek({ workouts }: ThisWeekProps) {
+export function ThisWeek({ workouts, activities = [] }: ThisWeekProps) {
   // Build a map of day -> workout
   const dayWorkouts = new Map<string, Workout>();
   for (const w of workouts) {
     const day = matchDay(w.workoutName);
     if (day) {
       dayWorkouts.set(day, w);
+    }
+  }
+
+  // Build a set of completed workout IDs from activities
+  const completedWorkoutIds = new Set<string>();
+  for (const a of activities) {
+    if (a.matchedWorkoutId) {
+      completedWorkoutIds.add(a.matchedWorkoutId);
     }
   }
 
