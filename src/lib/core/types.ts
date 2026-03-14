@@ -207,3 +207,65 @@ export interface SyncState {
     contentHash: string; // hash of the workout payload for change detection
   }>;
 }
+
+// ── Phase 2: Activity + Insight types ──
+
+export interface ExerciseSetData {
+  exerciseName: string | null;
+  category: string | null;
+  reps: number | null;
+  weight: number | null;
+  weightUnit: string | null;
+  duration: number | null;
+  setOrder: number;
+}
+
+export interface GarminActivityData {
+  activityId: number;
+  activityName: string;
+  startTimeLocal: string;
+  duration: number;
+  activityType: string;
+  totalSets: number | null;
+  activeSets: number | null;
+  totalReps: number | null;
+  calories: number | null;
+  averageHR: number | null;
+  exerciseSets: ExerciseSetData[];
+}
+
+export interface PlanContext {
+  workoutName: string;
+  exercises: Array<{
+    name: string;
+    sets: number;
+    reps: number | null;
+    weight: number | null;
+    weightUnit: string | null;
+  }>;
+}
+
+export interface ActualContext {
+  activityName: string;
+  duration: number;
+  totalReps: number | null;
+  exerciseSets: ExerciseSetData[];
+}
+
+export interface MatchResult {
+  activityId: string;
+  workoutId: string;
+  workoutName: string;
+  confidence: number;
+  matchMethod: "exact-name" | "fuzzy-name" | "date-proximity";
+}
+
+export interface AutoInsightResult {
+  insights: Array<{ type: string; message: string }>;
+  raw: string;
+}
+
+export interface DeepAnalysisResult {
+  sections: Array<{ title: string; content: string; type: string }>;
+  raw: string;
+}
