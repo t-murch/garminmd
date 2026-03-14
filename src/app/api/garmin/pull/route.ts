@@ -4,6 +4,7 @@ import { decrypt, encrypt } from "@/lib/utils/crypto";
 import {
   getGarminConnection,
   getGarminWorkouts,
+  getGarminActivityByGarminId,
   updateActivityMatch,
   upsertGarminConnection,
   createInsight,
@@ -13,24 +14,19 @@ import { pullActivities } from "@/lib/garmin/activities";
 import { matchActivitiesToWorkouts } from "@/lib/analysis/matcher";
 import { generateAutoInsight } from "@/lib/analysis/engine";
 import type { IGarminTokens } from "@flow-js/garmin-connect";
-import type { PlanContext, ActualContext, ExerciseSetData } from "@/lib/core/types";
+import type {
+  PlanContext,
+  ActualContext,
+  ExerciseSetData,
+} from "@/lib/core/types";
 
 /**
  * POST /api/garmin/pull
  *
  * Pulls recent activities from Garmin Connect, stores them in the DB,
- * and matches new activities to existing workout plans.
- *
- * Flow:
- *   1. Validate session + Garmin connection
- *   2. Create authenticated Garmin client (reusing stored session tokens)
- *   3. Pull activities via pullActivities()
- *   4. Match new activities to stored workouts
- *   5. Update matched activities in DB
- *   6. Return pull + match summary
+ * matches new activities to workout plans, and generates auto-insights.
  */
 export async function POST() {
-  // Verify the user is logged in
   const session = await getServerSession();
   if (!session.isLoggedIn) {
     return NextResponse.json(
@@ -39,7 +35,6 @@ export async function POST() {
     );
   }
 
-  // Get and verify Garmin connection
   const garminConn = await getGarminConnection(session.userId);
   if (!garminConn) {
     return NextResponse.json(
@@ -57,11 +52,22 @@ export async function POST() {
         decrypt(garminConn.garminSession),
       ) as IGarminTokens;
     } catch {
-      // Corrupted session data — will fall back to fresh login
+      // Corrupted session data — will require re-auth
     }
   }
 
-  // Create authenticated Garmin client
+  // If no valid session tokens, user must re-authenticate
+  if (!existingTokens) {
+    return NextResponse.json(
+      {
+        error:
+          "Garmin session expired. Please reconnect your Garmin account in Settings.",
+      },
+      { status: 401 },
+    );
+  }
+
+  // Create authenticated Garmin client using stored tokens only
   let garminClient;
   try {
     garminClient = await createGarminClient(email, "", existingTokens);
@@ -90,26 +96,24 @@ export async function POST() {
     );
   }
 
-  // Match new activities to workouts
+  // Match new activities to workouts and generate insights in a single pass
   const newActivities = pullResult.activities.filter((a) => a.isNew);
   let matchedCount = 0;
   let insightsGenerated = 0;
 
   if (newActivities.length > 0) {
-    // Get user's workouts from DB
     const workouts = await getGarminWorkouts(session.userId);
 
-    // Map to matchable format
-    const matchableActivities = newActivities.map((a) => {
-      // We need the DB record to get the id and startTime.
-      // pullActivities already upserted them, so we use garminActivityId
-      // as the id for matching, then look up the DB id for updating.
-      return {
-        id: a.garminActivityId,
-        activityName: a.activityName,
-        startTime: null as number | null, // We'll enhance this below
-      };
-    });
+    // Look up DB records for new activities to get startTime
+    const dbActivities = await Promise.all(
+      newActivities.map((a) => getGarminActivityByGarminId(a.garminActivityId)),
+    );
+
+    const matchableActivities = newActivities.map((a, i) => ({
+      id: a.garminActivityId,
+      activityName: a.activityName,
+      startTime: dbActivities[i]?.startTime ?? null,
+    }));
 
     const matchableWorkouts = workouts.map((w) => ({
       id: w.id,
@@ -122,49 +126,24 @@ export async function POST() {
       matchableWorkouts,
     );
 
-    // Update matched activities in DB
-    // We need to look up DB ids by garmin activity id
-    const { getGarminActivityByGarminId } = await import(
-      "@/lib/db/queries"
-    );
-
+    // Single pass: update match + generate insight for each matched activity
     for (const [garminActivityId, match] of matches) {
-      const dbActivity = await getGarminActivityByGarminId(garminActivityId);
-      if (dbActivity) {
-        await updateActivityMatch(dbActivity.id, match.workoutId);
-        matchedCount++;
-      }
-    }
+      const idx = newActivities.findIndex(
+        (a) => a.garminActivityId === garminActivityId,
+      );
+      const dbActivity = idx >= 0 ? dbActivities[idx] : null;
+      if (!dbActivity) continue;
 
-    // Generate auto-insights for newly matched activities
-    for (const [garminActivityId, match] of matches) {
+      // Update the match in DB
+      await updateActivityMatch(dbActivity.id, match.workoutId);
+      matchedCount++;
+
+      // Generate auto-insight (non-critical — failure doesn't fail the pull)
       try {
-        const dbActivity = await getGarminActivityByGarminId(garminActivityId);
-        if (!dbActivity) continue;
-
-        // Build ActualContext from activity raw data
-        let exerciseSets: ExerciseSetData[] = [];
-        let totalReps: number | null = null;
-        if (dbActivity.rawData) {
-          try {
-            const raw = JSON.parse(dbActivity.rawData);
-            exerciseSets = raw.exerciseSets ?? [];
-            totalReps = raw.totalReps ?? null;
-          } catch {
-            // Malformed raw data — proceed with empty sets
-          }
-        }
-
-        const actual: ActualContext = {
-          activityName: dbActivity.activityName ?? "Unknown Activity",
-          duration: dbActivity.durationSeconds ?? 0,
-          totalReps,
-          exerciseSets,
-        };
-
+        const actual = buildActualContext(dbActivity);
         const plan: PlanContext = {
           workoutName: match.workoutName,
-          exercises: [],
+          exercises: [], // TODO: Store resolved plan data for richer insights
         };
 
         const result = await generateAutoInsight(plan, actual);
@@ -181,7 +160,6 @@ export async function POST() {
           insightsGenerated++;
         }
       } catch (err) {
-        // Insight generation failure should not fail the pull
         console.error(
           `Failed to generate auto-insight for activity ${garminActivityId}:`,
           err,
@@ -190,16 +168,16 @@ export async function POST() {
     }
   }
 
-  // Update stored session tokens (they may have been refreshed)
+  // Update stored session tokens (best-effort)
   try {
     const freshTokens = garminClient.getSessionTokens();
-    upsertGarminConnection(
+    await upsertGarminConnection(
       session.userId,
       garminConn.garminEmail,
       encrypt(JSON.stringify(freshTokens)),
     );
   } catch {
-    // Non-critical — tokens will be refreshed on next request
+    // Non-critical
   }
 
   return NextResponse.json({
@@ -213,4 +191,31 @@ export async function POST() {
       isNew: a.isNew,
     })),
   });
+}
+
+/** Build ActualContext from a DB activity record. */
+function buildActualContext(dbActivity: {
+  activityName: string | null;
+  durationSeconds: number | null;
+  rawData: string | null;
+}): ActualContext {
+  let exerciseSets: ExerciseSetData[] = [];
+  let totalReps: number | null = null;
+
+  if (dbActivity.rawData) {
+    try {
+      const raw = JSON.parse(dbActivity.rawData);
+      exerciseSets = raw.exerciseSets ?? [];
+      totalReps = raw.totalReps ?? null;
+    } catch {
+      // Malformed raw data — proceed with empty sets
+    }
+  }
+
+  return {
+    activityName: dbActivity.activityName ?? "Unknown Activity",
+    duration: dbActivity.durationSeconds ?? 0,
+    totalReps,
+    exerciseSets,
+  };
 }

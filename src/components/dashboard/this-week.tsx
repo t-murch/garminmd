@@ -109,11 +109,15 @@ export function ThisWeek({ workouts, activities = [] }: ThisWeekProps) {
                         .trim()
                         .replace(/^[-—:]\s*/, "") || workout.workoutName}
                     </span>
-                    {workout.garminWorkoutId ? (
+                    {completedWorkoutIds.has(workout.id) ? (
                       <Badge
                         variant="secondary"
                         className="mt-1 text-[10px] bg-green-600/10 text-green-700 dark:text-green-400"
                       >
+                        Done
+                      </Badge>
+                    ) : workout.garminWorkoutId ? (
+                      <Badge variant="secondary" className="mt-1 text-[10px]">
                         Synced
                       </Badge>
                     ) : (
