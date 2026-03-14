@@ -219,10 +219,8 @@ describe("fuzzyScore", () => {
   });
 
   it("handles empty strings", () => {
-    // Both empty → substring containment (empty includes empty) → 0/0 edge case
-    // min/max of 0/0 → 0/0 = NaN, but we guard with union > 0
-    const score = fuzzyScore("", "");
-    // Empty includes empty, shorter = 0, longer = 0 → 0/0 = NaN → treated as 0
-    expect(score).toBeNaN();
+    expect(fuzzyScore("", "")).toBe(0);
+    expect(fuzzyScore("push", "")).toBe(0);
+    expect(fuzzyScore("", "push")).toBe(0);
   });
 });

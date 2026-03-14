@@ -108,6 +108,8 @@ export function matchActivitiesToWorkouts(
  * Returns 0-1 score.
  */
 export function fuzzyScore(a: string, b: string): number {
+  if (a.length === 0 || b.length === 0) return 0;
+
   // Substring containment
   if (a.includes(b) || b.includes(a)) {
     const shorter = Math.min(a.length, b.length);
