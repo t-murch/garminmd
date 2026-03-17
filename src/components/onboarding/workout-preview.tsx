@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import type { ParsedWorkout } from "@/lib/core/types";
 
 interface SyncResultItem {
@@ -109,7 +110,7 @@ export function WorkoutPreview({ pageId, workouts }: WorkoutPreviewProps) {
         <Button onClick={handleSync} disabled={syncing} size="lg">
           {syncing ? (
             <>
-              <LoadingSpinner />
+              <Spinner className="mr-2" />
               Syncing...
             </>
           ) : (
@@ -130,27 +131,3 @@ export function WorkoutPreview({ pageId, workouts }: WorkoutPreviewProps) {
   );
 }
 
-function LoadingSpinner() {
-  return (
-    <svg
-      className="mr-2 h-4 w-4 animate-spin"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-      />
-    </svg>
-  );
-}

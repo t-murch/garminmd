@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { getNotionAuthUrl } from "@/lib/notion/oauth";
 
 export const dynamic = "force-dynamic";
