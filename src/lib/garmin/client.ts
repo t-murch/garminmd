@@ -36,11 +36,11 @@ export interface GarminActivityDetail {
 export interface GarminClient {
   /** Push a workout to Garmin Connect. Returns the Garmin-assigned workout ID. */
   pushWorkout(payload: GarminWorkoutPayload): Promise<string>;
-  /** Update an existing workout on Garmin Connect by its ID. */
+  /** Replace an existing workout on Garmin Connect (delete + create). Returns the new workout ID. */
   updateWorkout(
     workoutId: string,
     payload: GarminWorkoutPayload,
-  ): Promise<void>;
+  ): Promise<string>;
   /** List workouts from Garmin Connect. */
   listWorkouts(start?: number, limit?: number): Promise<IWorkout[]>;
   /** Delete a workout from Garmin Connect by its ID. */
@@ -147,14 +147,20 @@ function wrapClient(
     async updateWorkout(
       workoutId: string,
       payload: GarminWorkoutPayload,
-    ): Promise<void> {
-      const detail = toGarminWorkoutDetail(payload, workoutId);
-      // The library exposes a generic put() method; the Garmin API accepts
-      // PUT /workout-service/workout/{id} with the full IWorkoutDetail body.
-      await gc.put(
-        `https://connect.garmin.com/workout-service/workout/${workoutId}`,
-        detail,
-      );
+    ): Promise<string> {
+      // Garmin's workout API doesn't support PUT — delete and recreate instead.
+      // Swallow 404 — the workout may already be gone (stale DB reference).
+      try {
+        await gc.deleteWorkout({ workoutId });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (!msg.includes("404") && !msg.includes("NotFound")) {
+          throw err;
+        }
+      }
+      const detail = toGarminWorkoutDetail(payload);
+      const created = await gc.createWorkout(detail);
+      return String(created.workoutId);
     },
 
     async listWorkouts(
@@ -257,7 +263,7 @@ function toGarminWorkoutDetail(
       sportTypeKey: seg.sportType.sportTypeKey,
       displayOrder: seg.segmentOrder,
     },
-    workoutSteps: seg.workoutSteps.map(mapStep),
+    workoutSteps: seg.workoutSteps.map(mapStepOrGroup),
   }));
 
   // The library's IWorkoutDetail type is overly strict with null-only fields.
@@ -309,7 +315,40 @@ function toGarminWorkoutDetail(
   return detail;
 }
 
-function mapStep(step: GarminWorkoutStep): IWorkoutStep {
+function mapStepOrGroup(step: GarminWorkoutStepOrGroup): IWorkoutStep {
+  if (step.type === "RepeatGroupDTO") {
+    return mapRepeatGroup(step as GarminRepeatGroup);
+  }
+  return mapExecutableStep(step as GarminWorkoutStep);
+}
+
+function mapRepeatGroup(group: GarminRepeatGroup): IWorkoutStep {
+  // The library's IWorkoutStep type doesn't model RepeatGroupDTO, but
+  // the Garmin API accepts this shape. We cast through unknown.
+  return ({
+    type: "RepeatGroupDTO",
+    stepId: 0,
+    stepOrder: group.stepOrder,
+    stepType: {
+      stepTypeId: 6,
+      stepTypeKey: "repeat",
+      displayOrder: 6,
+    },
+    numberOfIterations: group.numberOfIterations,
+    smartRepeat: false,
+    childStepId: null,
+    endCondition: {
+      conditionTypeId: 7,
+      conditionTypeKey: "iterations",
+      displayOrder: 7,
+      displayable: false,
+    },
+    endConditionValue: null,
+    workoutSteps: group.workoutSteps.map(mapExecutableStep),
+  }) as unknown as IWorkoutStep;
+}
+
+function mapExecutableStep(step: GarminWorkoutStep): IWorkoutStep {
   // The library's IWorkoutStep type uses literal `null` for fields like
   // category, exerciseName, weightValue, weightUnit. The Garmin API
   // actually accepts string/number values there, so we assert the type.
@@ -371,7 +410,11 @@ function mapStep(step: GarminWorkoutStep): IWorkoutStep {
 
 function endConditionTypeId(key: string): number {
   switch (key) {
+    case "reps":
+      return 10;
     case "repetitions":
+      return 7;
+    case "iterations":
       return 7;
     case "time":
       return 2;
