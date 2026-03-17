@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ interface InsightFeedProps {
 }
 
 export function InsightFeed({ insights }: InsightFeedProps) {
+  const router = useRouter();
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +37,7 @@ export function InsightFeed({ insights }: InsightFeedProps) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Analysis failed");
       }
-      window.location.reload();
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Analysis failed");
     } finally {

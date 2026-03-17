@@ -87,7 +87,7 @@ export function ThisWeek({ workouts, activities = [] }: ThisWeekProps) {
   return (
     <div className="flex flex-col gap-3">
       <h2 className="text-lg font-semibold">This Week</h2>
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
         {DAYS.map((day) => {
           const workout = dayWorkouts.get(day);
           return (

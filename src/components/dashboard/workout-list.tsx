@@ -48,16 +48,29 @@ export function WorkoutList({ workouts, notionPages, garminConnected }: WorkoutL
     setSyncingAll(true);
     setError(null);
     try {
-      // Sync each page
+      // Sync each page from Notion, then push to Garmin
       for (const page of notionPages) {
-        const res = await fetch("/api/notion/sync", {
+        const syncRes = await fetch("/api/notion/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pageId: page.notionPageId }),
         });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
+        if (!syncRes.ok) {
+          const data = await syncRes.json().catch(() => ({}));
           throw new Error(data.error || `Failed to sync "${page.pageTitle}"`);
+        }
+
+        // Push parsed workouts to Garmin if connected
+        if (garminConnected) {
+          const pushRes = await fetch("/api/garmin/push", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pageId: page.notionPageId }),
+          });
+          if (!pushRes.ok) {
+            const data = await pushRes.json().catch(() => ({}));
+            throw new Error(data.error || `Failed to push "${page.pageTitle}" to Garmin`);
+          }
         }
       }
       router.refresh();
@@ -85,7 +98,7 @@ export function WorkoutList({ workouts, notionPages, garminConnected }: WorkoutL
       setPullResult(
         `Pulled ${data.pulled} activities, ${data.matched} matched`,
       );
-      setTimeout(() => window.location.reload(), 1500);
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Pull failed");
     } finally {
