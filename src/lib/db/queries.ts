@@ -70,6 +70,7 @@ export async function upsertGarminConnection(
   userId: string,
   encryptedEmail: string,
   encryptedSession: string | null,
+  encryptedPassword?: string,
   db: AppDatabase = getDb(),
 ) {
   const existing = await db.query.garminConnections.findFirst({
@@ -82,6 +83,7 @@ export async function upsertGarminConnection(
       .set({
         garminEmail: encryptedEmail,
         garminSession: encryptedSession,
+        ...(encryptedPassword !== undefined && { garminPassword: encryptedPassword }),
         lastSyncAt: Date.now(),
       })
       .where(eq(garminConnections.id, existing.id));
@@ -93,6 +95,7 @@ export async function upsertGarminConnection(
     id,
     userId,
     garminEmail: encryptedEmail,
+    garminPassword: encryptedPassword ?? null,
     garminSession: encryptedSession,
   });
   return { id };
@@ -163,6 +166,8 @@ export async function upsertGarminWorkout(
   workoutName: string,
   garminWorkoutId: string | null,
   payloadHash: string,
+  notionPageId: string,
+  resolvedData?: string,
   db: AppDatabase = getDb(),
 ) {
   const existing = await db.query.garminWorkouts.findFirst({
@@ -178,6 +183,8 @@ export async function upsertGarminWorkout(
       .set({
         garminWorkoutId,
         payloadHash,
+        notionPageId,
+        ...(resolvedData !== undefined && { resolvedData }),
         lastPushedAt: Date.now(),
       })
       .where(eq(garminWorkouts.id, existing.id));
@@ -191,6 +198,8 @@ export async function upsertGarminWorkout(
     workoutName,
     garminWorkoutId,
     payloadHash,
+    notionPageId,
+    resolvedData: resolvedData ?? null,
     lastPushedAt: Date.now(),
   });
   return { id };
@@ -222,6 +231,10 @@ export async function cacheExercise(
   const id = crypto.randomUUID();
   await db.insert(exerciseCache).values({ id, ...entry });
   return { id };
+}
+
+export async function clearExerciseCache(db: AppDatabase = getDb()) {
+  await db.delete(exerciseCache);
 }
 
 // ─── Garmin Activities (Phase 2) ──────────────────────────────

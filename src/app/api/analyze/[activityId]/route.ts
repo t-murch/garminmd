@@ -6,6 +6,7 @@ import {
   createInsight,
 } from "@/lib/db/queries";
 import { generateAutoInsight } from "@/lib/analysis/engine";
+import { buildPlanContext } from "@/lib/analysis/plan-context";
 import type { PlanContext, ActualContext, ExerciseSetData } from "@/lib/core/types";
 
 /**
@@ -72,10 +73,9 @@ export async function POST(
   if (activity.matchedWorkoutId) {
     const workouts = await getGarminWorkouts(session.userId);
     const matched = workouts.find((w) => w.id === activity.matchedWorkoutId);
-    plan = {
-      workoutName: matched?.workoutName ?? activity.activityName ?? "Workout",
-      exercises: [], // Exercise details not stored in garmin_workouts
-    };
+    plan = matched
+      ? buildPlanContext(matched)
+      : { workoutName: activity.activityName ?? "Workout", exercises: [] };
   } else {
     plan = {
       workoutName: activity.activityName ?? "Workout",

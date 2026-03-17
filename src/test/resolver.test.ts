@@ -37,9 +37,11 @@ describe("normalizeName", () => {
   });
 
   it("expands EZ to ez bar", () => {
-    expect(normalizeName("EZ Bar Curl")).toBe("ez bar bar curl");
-    // Note: "EZ" expands to "ez bar", so "EZ Bar" becomes "ez bar bar"
-    // This is acceptable — the dictionary entry uses the same normalization
+    expect(normalizeName("EZ Curl")).toBe("ez bar curl");
+  });
+
+  it("normalizes 'EZ Bar Curl' without doubling bar", () => {
+    expect(normalizeName("EZ Bar Curl")).toBe("ez bar curl");
   });
 
   it("collapses whitespace", () => {
@@ -80,7 +82,7 @@ describe("exactMatch", () => {
     const result = exactMatch("Lat Pulldown");
     expect(result).not.toBeNull();
     expect(result!.exerciseName).toBe("LAT_PULLDOWN");
-    expect(result!.category).toBe("LAT_PULL");
+    expect(result!.category).toBe("PULL_UP");
   });
 
   it("resolves exercise with parenthetical stripped", () => {

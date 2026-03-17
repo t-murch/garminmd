@@ -44,6 +44,7 @@ function createTestDb() {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
       garmin_email TEXT NOT NULL,
+      garmin_password TEXT,
       garmin_session TEXT,
       last_sync_at INTEGER
     );
@@ -64,6 +65,7 @@ function createTestDb() {
       workout_name TEXT NOT NULL,
       garmin_workout_id TEXT,
       payload_hash TEXT,
+      resolved_data TEXT,
       last_pushed_at INTEGER
     );
 
@@ -154,6 +156,7 @@ describe("database schema and queries", () => {
         userId,
         "enc-email",
         "enc-session",
+        undefined,
         db,
       );
       expect(id).toBeDefined();
@@ -166,8 +169,8 @@ describe("database schema and queries", () => {
 
     it("updates existing connection on second upsert", async () => {
       const { id: userId } = await createUser("notion-gc2", "token", db);
-      await upsertGarminConnection(userId, "email-v1", "session-v1", db);
-      await upsertGarminConnection(userId, "email-v2", "session-v2", db);
+      await upsertGarminConnection(userId, "email-v1", "session-v1", undefined, db);
+      await upsertGarminConnection(userId, "email-v2", "session-v2", undefined, db);
 
       const conn = await getGarminConnection(userId, db);
       expect(conn!.garminEmail).toBe("email-v2");
@@ -208,7 +211,7 @@ describe("database schema and queries", () => {
   describe("garmin workouts", () => {
     it("creates and lists workouts", async () => {
       const { id: userId } = await createUser("notion-gw", "token", db);
-      await upsertGarminWorkout(userId, "Push Day", "garmin-42", "hash-a", db);
+      await upsertGarminWorkout(userId, "Push Day", "garmin-42", "hash-a", "notion-page-1", undefined, db);
 
       const workouts = await getGarminWorkouts(userId, db);
       expect(workouts).toHaveLength(1);
@@ -218,8 +221,8 @@ describe("database schema and queries", () => {
 
     it("updates existing workout on re-push (idempotent)", async () => {
       const { id: userId } = await createUser("notion-gw2", "token", db);
-      await upsertGarminWorkout(userId, "Pull Day", "garmin-1", "hash-1", db);
-      await upsertGarminWorkout(userId, "Pull Day", "garmin-1", "hash-2", db);
+      await upsertGarminWorkout(userId, "Pull Day", "garmin-1", "hash-1", "notion-page-1", undefined, db);
+      await upsertGarminWorkout(userId, "Pull Day", "garmin-1", "hash-2", "notion-page-1", undefined, db);
 
       const workouts = await getGarminWorkouts(userId, db);
       expect(workouts).toHaveLength(1);
@@ -279,6 +282,7 @@ describe("database schema and queries", () => {
           "fake-user-id",
           "email",
           "session",
+          undefined,
           db,
         ),
       ).rejects.toThrow();
@@ -392,6 +396,8 @@ describe("database schema and queries", () => {
         "Push Day",
         "gw-1",
         "hash",
+        "notion-page-1",
+        undefined,
         db,
       );
 
@@ -487,6 +493,8 @@ describe("database schema and queries", () => {
         "Push Day",
         "gw-join",
         "hash",
+        "notion-page-1",
+        undefined,
         db,
       );
       const { id: activityId } = await upsertGarminActivity(

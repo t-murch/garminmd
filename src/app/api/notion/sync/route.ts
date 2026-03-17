@@ -49,6 +49,9 @@ export async function POST(request: Request) {
 
   // Parse into structured workouts
   const workouts = parseMarkdown(markdown);
+  console.info(
+    `Parsed ${workouts.length} workouts: ${workouts.map((w) => w.name).join(", ")}`,
+  );
 
   // Compute a content hash for change detection
   const contentHash = createHash("sha256").update(markdown).digest("hex");

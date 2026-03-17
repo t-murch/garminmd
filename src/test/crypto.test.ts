@@ -47,6 +47,13 @@ describe("crypto", () => {
     expect(() => decrypt(parts.join(":"))).toThrow();
   });
 
+  it("password encrypt/decrypt roundtrip", () => {
+    const password = "MyG@rminP4ssw0rd!";
+    const encrypted = encrypt(password);
+    expect(encrypted).not.toBe(password);
+    expect(decrypt(encrypted)).toBe(password);
+  });
+
   it("generateEncryptionKey produces valid key", () => {
     const key = generateEncryptionKey();
     expect(key).toHaveLength(64);

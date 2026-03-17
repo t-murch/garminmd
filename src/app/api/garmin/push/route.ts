@@ -89,21 +89,24 @@ export async function POST(request: Request) {
     }
   }
 
+  // Decrypt stored password for re-auth if tokens expire
+  const password = garminConn.garminPassword
+    ? decrypt(garminConn.garminPassword)
+    : "";
+
   // Create authenticated Garmin client
   let garminClient;
   try {
-    // Password is not stored (only email + session tokens).
-    // If tokens are expired, this will fail and user needs to re-auth.
-    // We pass an empty password since we rely on stored session tokens.
-    garminClient = await createGarminClient(email, "", existingTokens);
+    garminClient = await createGarminClient(email, password, existingTokens);
   } catch (err) {
     if (err instanceof GarminServiceError) {
       return NextResponse.json({ error: err.message }, { status: 502 });
     }
     return NextResponse.json(
       {
-        error:
-          "Garmin session expired. Please reconnect your Garmin account in Settings.",
+        error: garminConn.garminPassword
+          ? "Garmin session expired. Please reconnect your Garmin account in Settings."
+          : "Garmin session expired. Please re-enter your Garmin credentials in Settings to enable automatic re-authentication.",
       },
       { status: 401 },
     );
@@ -168,10 +171,19 @@ export async function POST(request: Request) {
     );
   }
 
+  // Build a map of workout name → serialized ResolvedWorkout for storage
+  const resolvedDataMap = new Map<string, string>();
+  for (const workout of resolvedWorkouts) {
+    // Find the matching payload (skipped workouts won't have one)
+    if (payloads.some((p) => p.workoutName === workout.name)) {
+      resolvedDataMap.set(workout.name, JSON.stringify(workout));
+    }
+  }
+
   // Sync to Garmin
   let results: SyncResult[];
   try {
-    results = await syncWorkoutsToGarmin(session.userId, payloads, garminClient);
+    results = await syncWorkoutsToGarmin(session.userId, payloads, garminClient, resolvedDataMap, pageId);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
@@ -184,7 +196,7 @@ export async function POST(request: Request) {
   // This is best-effort; a failure here shouldn't block the response.
   try {
     const freshTokens = garminClient.getSessionTokens();
-    upsertGarminConnection(
+    await upsertGarminConnection(
       session.userId,
       garminConn.garminEmail,
       encrypt(JSON.stringify(freshTokens)),
