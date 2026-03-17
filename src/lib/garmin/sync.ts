@@ -1,5 +1,9 @@
 import { createHash } from "node:crypto";
-import type { GarminWorkoutPayload } from "@/lib/core/types";
+import type {
+  GarminWorkoutPayload,
+  GarminRepeatGroup,
+  GarminWorkoutStepOrGroup,
+} from "@/lib/core/types";
 import type { GarminClient } from "./client";
 import {
   getGarminWorkouts,
@@ -10,8 +14,9 @@ import {
 
 export interface SyncResult {
   workoutName: string;
-  action: "created" | "updated" | "unchanged";
+  action: "created" | "updated" | "unchanged" | "failed";
   garminWorkoutId?: string;
+  error?: string;
 }
 
 // ─── Sync Logic ────────────────────────────────────────────────
@@ -33,6 +38,8 @@ export async function syncWorkoutsToGarmin(
   userId: string,
   workouts: GarminWorkoutPayload[],
   garminClient: GarminClient,
+  resolvedDataMap?: Map<string, string>,
+  notionPageId?: string,
 ): Promise<SyncResult[]> {
   const existingWorkouts = await getGarminWorkouts(userId);
 
@@ -48,7 +55,6 @@ export async function syncWorkoutsToGarmin(
     const existing = existingByName.get(payload.workoutName);
 
     if (existing && existing.payloadHash === hash) {
-      // Payload hasn't changed — nothing to do
       results.push({
         workoutName: payload.workoutName,
         action: "unchanged",
@@ -57,31 +63,97 @@ export async function syncWorkoutsToGarmin(
       continue;
     }
 
-    if (existing?.garminWorkoutId) {
-      // Workout exists on Garmin but payload changed — update it
-      await garminClient.updateWorkout(existing.garminWorkoutId, payload);
+    // Per-workout try/catch so one failure doesn't block the rest
+    try {
+      if (existing?.garminWorkoutId) {
+        const newGarminId = await garminClient.updateWorkout(existing.garminWorkoutId, payload);
+        await upsertGarminWorkout(
+          userId,
+          payload.workoutName,
+          newGarminId,
+          hash,
+          notionPageId!,
+          resolvedDataMap?.get(payload.workoutName),
+        );
+        results.push({
+          workoutName: payload.workoutName,
+          action: "updated",
+          garminWorkoutId: newGarminId,
+        });
+        continue;
+      }
+
+      const garminWorkoutId = await garminClient.pushWorkout(payload);
       await upsertGarminWorkout(
         userId,
         payload.workoutName,
-        existing.garminWorkoutId,
+        garminWorkoutId,
         hash,
+        notionPageId!,
+        resolvedDataMap?.get(payload.workoutName),
       );
       results.push({
         workoutName: payload.workoutName,
-        action: "updated",
-        garminWorkoutId: existing.garminWorkoutId,
+        action: "created",
+        garminWorkoutId,
       });
-      continue;
-    }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const steps = payload.workoutSegments[0]?.workoutSteps ?? [];
+      const categories = steps
+        .flatMap((s) =>
+          s.type === "RepeatGroupDTO"
+            ? (s as GarminRepeatGroup).workoutSteps
+            : [s],
+        )
+        .filter((s) => "exerciseCategory" in s && s.exerciseCategory)
+        .map((s) => {
+          const ec = (s as { exerciseCategory: { category: string; exerciseName: string } }).exerciseCategory;
+          return `${ec.category}/${ec.exerciseName}`;
+        })
+        .join(", ");
+      console.error(
+        `Failed to sync "${payload.workoutName}": ${message}` +
+        (categories ? ` | exercises: ${categories}` : ""),
+      );
 
-    // New workout — create on Garmin
-    const garminWorkoutId = await garminClient.pushWorkout(payload);
-    await upsertGarminWorkout(userId, payload.workoutName, garminWorkoutId, hash);
-    results.push({
-      workoutName: payload.workoutName,
-      action: "created",
-      garminWorkoutId,
-    });
+      // Retry without exercise categories — Garmin may reject specific
+      // category/exerciseName combos that are invalid or deprecated.
+      // Steps become generic with text descriptions instead.
+      if (message.includes("Invalid category") || message.includes("BadRequest")) {
+        try {
+          console.info(`Retrying "${payload.workoutName}" without exercise categories...`);
+          const stripped = stripCategories(payload);
+          const strippedHash = hashPayload(stripped);
+          // Always create fresh — the old workout is already gone from Garmin
+          // (deleted during the first attempt's updateWorkout call).
+          const gwId = await garminClient.pushWorkout(stripped);
+          await upsertGarminWorkout(
+            userId,
+            stripped.workoutName,
+            gwId,
+            strippedHash,
+            notionPageId!,
+            resolvedDataMap?.get(payload.workoutName),
+          );
+          results.push({
+            workoutName: payload.workoutName,
+            action: existing?.garminWorkoutId ? "updated" : "created",
+            garminWorkoutId: gwId,
+          });
+          continue;
+        } catch (retryErr) {
+          const retryMsg = retryErr instanceof Error ? retryErr.message : String(retryErr);
+          console.error(`Retry also failed for "${payload.workoutName}": ${retryMsg}`);
+        }
+      }
+
+      results.push({
+        workoutName: payload.workoutName,
+        action: "failed",
+        error: message,
+      });
+    }
   }
 
   return results;
@@ -97,4 +169,36 @@ export async function syncWorkoutsToGarmin(
 export function hashPayload(payload: GarminWorkoutPayload): string {
   const json = JSON.stringify(payload);
   return createHash("sha256").update(json).digest("hex");
+}
+
+/**
+ * Return a copy of the payload with all exerciseCategory fields removed.
+ * Used as a fallback when Garmin rejects specific category/exerciseName combos.
+ * Steps keep their descriptions so the exercise names are still visible on the watch.
+ * Handles both flat steps and repeat groups with nested child steps.
+ */
+function stripCategories(payload: GarminWorkoutPayload): GarminWorkoutPayload {
+  return {
+    ...payload,
+    workoutSegments: payload.workoutSegments.map((seg) => ({
+      ...seg,
+      workoutSteps: seg.workoutSteps.map(stripStepCategories),
+    })),
+  };
+}
+
+function stripStepCategories(step: GarminWorkoutStepOrGroup): GarminWorkoutStepOrGroup {
+  if (step.type === "RepeatGroupDTO") {
+    const group = step as GarminRepeatGroup;
+    return {
+      ...group,
+      workoutSteps: group.workoutSteps.map((s) => {
+        const { exerciseCategory: _, ...rest } = s;
+        return rest;
+      }),
+    };
+  }
+  const execStep = step as import("@/lib/core/types").GarminWorkoutStep;
+  const { exerciseCategory: _, ...rest } = execStep;
+  return rest;
 }

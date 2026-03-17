@@ -4,21 +4,28 @@ import type {
   ResolvedExercise,
   GarminWorkoutPayload,
   GarminWorkoutStep,
+  GarminRepeatGroup,
+  GarminWorkoutStepOrGroup,
   ValidationResult,
 } from "../core/types";
 
 /** Garmin's sport type IDs (reverse-engineered) */
 const STRENGTH_SPORT_TYPE = {
-  sportTypeId: 4,
+  sportTypeId: 5,
   sportTypeKey: "strength_training",
 } as const;
 
-/** Garmin's step type IDs */
+/**
+ * Garmin's step type IDs — verified against
+ * @flow-js/garmin-connect/dist/garmin/workout-builder/step.js
+ */
 const STEP_TYPES = {
-  warmup: { stepTypeId: 3, stepTypeKey: "warmup" as const },
-  interval: { stepTypeId: 1, stepTypeKey: "interval" as const },
-  rest: { stepTypeId: 4, stepTypeKey: "rest" as const },
+  warmup: { stepTypeId: 1, stepTypeKey: "warmup" as const },
   cooldown: { stepTypeId: 2, stepTypeKey: "cooldown" as const },
+  interval: { stepTypeId: 3, stepTypeKey: "interval" as const },
+  recovery: { stepTypeId: 4, stepTypeKey: "recovery" as const },
+  rest: { stepTypeId: 5, stepTypeKey: "rest" as const },
+  repeat: { stepTypeId: 6 as const, stepTypeKey: "repeat" as const },
 };
 
 /** Garmin enforces a max of 50 steps per workout */
@@ -35,11 +42,8 @@ export class StrengthAdapter implements SportAdapter {
       errors.push("Workout has no exercises.");
     }
 
-    // Estimate step count: each exercise = 1 step, each rest = 1 step
-    const exerciseCount = workout.exercises.length;
-    const restCount = exerciseCount - 1; // rest between exercises, not after last
-    const warmupCount = workout.exercises.filter((e) => e.isWarmup).length;
-    const estimatedSteps = exerciseCount + restCount;
+    // Each exercise = 1 repeat group (top-level step)
+    const estimatedSteps = workout.exercises.length;
 
     if (estimatedSteps > GARMIN_MAX_STEPS) {
       errors.push(
@@ -79,33 +83,18 @@ export class StrengthAdapter implements SportAdapter {
   }
 
   build(workout: ResolvedWorkout): GarminWorkoutPayload {
-    const steps: GarminWorkoutStep[] = [];
+    const steps: GarminWorkoutStepOrGroup[] = [];
     let stepOrder = 1;
 
-    const mainExercises = workout.exercises.filter((e) => !e.isWarmup);
-    const warmupExercises = workout.exercises.filter((e) => e.isWarmup);
-
-    // ─── Warm-up Steps ────────────────────────────────────
-    for (const ex of warmupExercises) {
-      steps.push(this.buildExerciseStep(ex, stepOrder++, "warmup"));
-    }
-
-    // Insert rest after warm-up block if there are warm-up exercises
-    if (warmupExercises.length > 0 && mainExercises.length > 0) {
-      const restSec =
-        warmupExercises[warmupExercises.length - 1].effectiveRestSeconds;
-      steps.push(this.buildRestStep(stepOrder++, restSec));
-    }
-
-    // ─── Main Exercise Steps ──────────────────────────────
-    for (let i = 0; i < mainExercises.length; i++) {
-      const ex = mainExercises[i];
-      steps.push(this.buildExerciseStep(ex, stepOrder++, "interval"));
-
-      // Insert rest between exercises (not after the last one)
-      if (i < mainExercises.length - 1) {
-        steps.push(this.buildRestStep(stepOrder++, ex.effectiveRestSeconds));
-      }
+    // Build a repeat group for each exercise (warmup and main alike).
+    // Each group contains: exercise step + rest step, repeated N times.
+    // The rest inside the group handles both inter-set rest and the
+    // transition to the next exercise.
+    for (const ex of workout.exercises) {
+      const type = ex.isWarmup ? "warmup" : "interval";
+      const group = this.buildRepeatGroup(ex, stepOrder, type);
+      steps.push(group);
+      stepOrder += 1;
     }
 
     return {
@@ -122,19 +111,38 @@ export class StrengthAdapter implements SportAdapter {
     };
   }
 
+  private buildRepeatGroup(
+    ex: ResolvedExercise,
+    order: number,
+    type: "warmup" | "interval",
+  ): GarminRepeatGroup {
+    const exerciseStep = this.buildExerciseStep(ex, 1, type);
+    const restStep = this.buildRestStep(2, ex.effectiveRestSeconds);
+
+    return {
+      stepOrder: order,
+      stepType: STEP_TYPES.repeat,
+      numberOfIterations: ex.sets,
+      smartRepeat: false,
+      endCondition: { conditionTypeKey: "iterations" },
+      type: "RepeatGroupDTO",
+      workoutSteps: [exerciseStep, restStep],
+    };
+  }
+
   private buildExerciseStep(
     ex: ResolvedExercise,
     order: number,
     type: "warmup" | "interval",
   ): GarminWorkoutStep {
     const step: GarminWorkoutStep = {
+      type: "ExecutableStepDTO",
       stepOrder: order,
       stepType: STEP_TYPES[type],
-      endCondition: { conditionTypeKey: "repetitions" },
+      endCondition: { conditionTypeKey: "reps" },
       endConditionValue: ex.effectiveReps,
     };
 
-    // Add Garmin exercise mapping if resolved
     if (ex.garminType) {
       step.exerciseCategory = {
         category: ex.garminType.category,
@@ -142,12 +150,10 @@ export class StrengthAdapter implements SportAdapter {
       };
     }
 
-    // Add weight if available
     if (ex.weightKg !== null && ex.weightKg > 0) {
       step.weightValue = { value: ex.weightKg };
     }
 
-    // Build description: "3 sets × 12 reps @ 35 lbs" or "Warm-up: 2 sets @ 25 lbs"
     step.description = this.buildStepDescription(ex, type);
 
     return step;
@@ -155,6 +161,7 @@ export class StrengthAdapter implements SportAdapter {
 
   private buildRestStep(order: number, seconds: number): GarminWorkoutStep {
     return {
+      type: "ExecutableStepDTO",
       stepOrder: order,
       stepType: STEP_TYPES.rest,
       endCondition: { conditionTypeKey: "time" },
@@ -170,7 +177,9 @@ export class StrengthAdapter implements SportAdapter {
 
     if (type === "warmup") parts.push("Warm-up:");
 
-    parts.push(`${ex.sets} sets × ${ex.effectiveReps} reps`);
+    // Sets are represented by the repeat group's numberOfIterations,
+    // so the description only needs reps and weight.
+    parts.push(`${ex.effectiveReps} reps`);
 
     if (ex.weight !== null) {
       parts.push(`@ ${ex.weight} ${ex.weightUnit ?? "lbs"}`);

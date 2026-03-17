@@ -98,9 +98,10 @@ export interface ResolvedWorkout extends Omit<ParsedWorkout, "exercises"> {
 /** Matches Garmin's internal workout step JSON structure */
 export interface GarminWorkoutStep {
   stepOrder: number;
+  type?: "ExecutableStepDTO";
   stepType: {
     stepTypeId: number;
-    stepTypeKey: "warmup" | "interval" | "rest" | "cooldown" | "recover";
+    stepTypeKey: "warmup" | "interval" | "rest" | "cooldown" | "recovery" | "repeat";
   };
   exerciseCategory?: {
     category: string;
@@ -108,11 +109,25 @@ export interface GarminWorkoutStep {
   };
   weightValue?: { value: number }; // kg
   endCondition: {
-    conditionTypeKey: "repetitions" | "time" | "lap.button";
+    conditionTypeKey: "repetitions" | "reps" | "time" | "lap.button" | "iterations";
   };
   endConditionValue?: number;
   description?: string;
 }
+
+/** A repeat group that wraps exercise + rest steps for N sets */
+export interface GarminRepeatGroup {
+  stepOrder: number;
+  stepType: { stepTypeId: 6; stepTypeKey: "repeat" };
+  numberOfIterations: number;
+  smartRepeat: boolean;
+  endCondition: { conditionTypeKey: "iterations" };
+  type: "RepeatGroupDTO";
+  workoutSteps: GarminWorkoutStep[];
+}
+
+/** A workout step or repeat group */
+export type GarminWorkoutStepOrGroup = GarminWorkoutStep | GarminRepeatGroup;
 
 /** The full payload sent to Garmin Connect createWorkout() */
 export interface GarminWorkoutPayload {
@@ -128,7 +143,7 @@ export interface GarminWorkoutPayload {
       sportTypeId: number;
       sportTypeKey: string;
     };
-    workoutSteps: GarminWorkoutStep[];
+    workoutSteps: GarminWorkoutStepOrGroup[];
   }>;
 }
 
