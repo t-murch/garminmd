@@ -38,7 +38,6 @@ describe("normalizeName", () => {
 
   it("expands EZ to ez bar without double-expansion", () => {
     expect(normalizeName("EZ Bar Curl")).toBe("ez bar curl");
-    // "EZ Bar" keeps "bar" and doesn't double-expand to "ez bar bar"
   });
 
   it("expands standalone EZ to ez bar", () => {
@@ -83,7 +82,7 @@ describe("exactMatch", () => {
     const result = exactMatch("Lat Pulldown");
     expect(result).not.toBeNull();
     expect(result?.exerciseName).toBe("LAT_PULLDOWN");
-    expect(result?.category).toBe("LAT_PULL");
+    expect(result?.category).toBe("PULL_UP");
   });
 
   it("resolves exercise with parenthetical stripped", () => {

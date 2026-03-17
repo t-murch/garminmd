@@ -7,7 +7,11 @@ import type {
 } from "@/lib/core/types";
 import { lbsToKg } from "@/lib/utils/units";
 import { cacheResolution, getCachedResolution } from "./cache";
-import { getDictionaryEntries, normalizeName } from "./dictionary";
+import {
+  getDictionaryEntries,
+  isValidExerciseMapping,
+  normalizeName,
+} from "./dictionary";
 import { exactMatch } from "./exact-match";
 import { llmMatch } from "./llm-match";
 
@@ -42,7 +46,12 @@ export async function resolveExercise(
   try {
     const cached = await getCachedResolution(normalized);
     if (cached) {
-      return { garminType: cached, method: "cached", confidence: 1.0 };
+      // Validate cached result against current dictionary — stale cache entries
+      // with wrong categories/exercise names cause Garmin 400 errors
+      if (isValidExerciseMapping(cached.category, cached.exerciseName)) {
+        return { garminType: cached, method: "cached", confidence: 1.0 };
+      }
+      // Stale cache entry — fall through to LLM for fresh resolution
     }
   } catch (err) {
     console.warn("Exercise cache lookup failed:", err);

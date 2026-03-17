@@ -12,6 +12,8 @@ import {
   buildDeepAnalysisContext,
 } from "./prompts";
 
+const ANALYSIS_MODEL = "claude-sonnet-4-20250514";
+
 /**
  * Extract JSON from an LLM response that may be wrapped in markdown code blocks.
  */
@@ -51,7 +53,7 @@ export async function generateAutoInsight(
   let text: string;
   try {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: ANALYSIS_MODEL,
       max_tokens: 1024,
       system: AUTO_INSIGHT_SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],
@@ -123,7 +125,7 @@ export async function generateDeepAnalysis(
   let text: string;
   try {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: ANALYSIS_MODEL,
       max_tokens: 2048,
       system: DEEP_ANALYSIS_SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],

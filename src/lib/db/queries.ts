@@ -68,6 +68,7 @@ export async function upsertGarminConnection(
   userId: string,
   encryptedEmail: string,
   encryptedSession: string | null,
+  encryptedPassword?: string,
   db: AppDatabase = getDb(),
 ) {
   const [row] = await db
@@ -82,6 +83,7 @@ export async function upsertGarminConnection(
       set: {
         garminEmail: encryptedEmail,
         garminSession: encryptedSession,
+        ...(encryptedPassword !== undefined && { garminPassword: encryptedPassword }),
         lastSyncAt: Date.now(),
       },
     })
@@ -144,6 +146,8 @@ export async function upsertGarminWorkout(
   workoutName: string,
   garminWorkoutId: string | null,
   payloadHash: string,
+  notionPageId: string,
+  resolvedData?: string,
   db: AppDatabase = getDb(),
 ) {
   const [row] = await db
@@ -160,6 +164,8 @@ export async function upsertGarminWorkout(
       set: {
         garminWorkoutId,
         payloadHash,
+        notionPageId,
+        ...(resolvedData !== undefined && { resolvedData }),
         lastPushedAt: Date.now(),
       },
     })
@@ -195,6 +201,10 @@ export async function cacheExercise(
     .values(entry)
     .returning({ id: exerciseCache.id });
   return { id: row.id };
+}
+
+export async function clearExerciseCache(db: AppDatabase = getDb()) {
+  await db.delete(exerciseCache);
 }
 
 // ─── Garmin Activities (Phase 2) ──────────────────────────────

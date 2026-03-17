@@ -14,6 +14,7 @@ import { pullActivities } from "@/lib/garmin/activities";
 import { matchActivitiesToWorkouts } from "@/lib/analysis/matcher";
 import { generateAutoInsight } from "@/lib/analysis/engine";
 import type { IGarminTokens } from "@flow-js/garmin-connect";
+import { buildPlanContext } from "@/lib/analysis/plan-context";
 import type {
   PlanContext,
   ActualContext,
@@ -56,29 +57,24 @@ export async function POST() {
     }
   }
 
-  // If no valid session tokens, user must re-authenticate
-  if (!existingTokens) {
-    return NextResponse.json(
-      {
-        error:
-          "Garmin session expired. Please reconnect your Garmin account in Settings.",
-      },
-      { status: 401 },
-    );
-  }
+  // Decrypt stored password for re-auth if tokens expire
+  const password = garminConn.garminPassword
+    ? decrypt(garminConn.garminPassword)
+    : "";
 
-  // Create authenticated Garmin client using stored tokens only
+  // Create authenticated Garmin client (re-auth with password if tokens expired)
   let garminClient;
   try {
-    garminClient = await createGarminClient(email, "", existingTokens);
+    garminClient = await createGarminClient(email, password, existingTokens);
   } catch (err) {
     if (err instanceof GarminServiceError) {
       return NextResponse.json({ error: err.message }, { status: 502 });
     }
     return NextResponse.json(
       {
-        error:
-          "Garmin session expired. Please reconnect your Garmin account in Settings.",
+        error: garminConn.garminPassword
+          ? "Garmin session expired. Please reconnect your Garmin account in Settings."
+          : "Garmin session expired. Please re-enter your Garmin credentials in Settings to enable automatic re-authentication.",
       },
       { status: 401 },
     );
@@ -141,10 +137,10 @@ export async function POST() {
       // Generate auto-insight (non-critical — failure doesn't fail the pull)
       try {
         const actual = buildActualContext(dbActivity);
-        const plan: PlanContext = {
-          workoutName: match.workoutName,
-          exercises: [], // TODO: Store resolved plan data for richer insights
-        };
+        const matchedWorkout = workouts.find((w) => w.id === match.workoutId);
+        const plan: PlanContext = matchedWorkout
+          ? buildPlanContext(matchedWorkout)
+          : { workoutName: match.workoutName, exercises: [] };
 
         const result = await generateAutoInsight(plan, actual);
 

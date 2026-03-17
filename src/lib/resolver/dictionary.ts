@@ -51,6 +51,9 @@ export function normalizeName(raw: string): string {
     })
     .join(" ");
 
+  // Fix double-bar from "EZ Bar" → "ez bar bar"
+  name = name.replace(/\bez bar bar\b/g, "ez bar");
+
   // Normalize multiple spaces
   name = name.replace(/\s+/g, " ").trim();
 
@@ -106,4 +109,27 @@ export function loadDictionary(): Map<string, GarminExerciseType> {
 export function getDictionaryEntries(): ExerciseDictionaryEntry[] {
   if (!entries) loadDictionary();
   return entries ?? [];
+}
+
+// ─── Validation ──────────────────────────────────────────────
+
+/** Set of "CATEGORY/EXERCISE_NAME" pairs from the dictionary, built lazily */
+let validPairs: Set<string> | null = null;
+
+/**
+ * Check if a category/exerciseName pair exists in the current dictionary.
+ * Used to detect stale cache entries that reference old or wrong Garmin values.
+ */
+export function isValidExerciseMapping(
+  category: string,
+  exerciseName: string,
+): boolean {
+  if (!validPairs) {
+    const dict = loadDictionary();
+    validPairs = new Set<string>();
+    for (const garminType of dict.values()) {
+      validPairs.add(`${garminType.category}/${garminType.exerciseName}`);
+    }
+  }
+  return validPairs.has(`${category}/${exerciseName}`);
 }

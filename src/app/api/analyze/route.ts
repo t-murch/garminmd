@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth/session";
 import { getRecentActivitiesWithWorkouts, createInsight } from "@/lib/db/queries";
 import { generateDeepAnalysis } from "@/lib/analysis/engine";
+import { buildPlanContext } from "@/lib/analysis/plan-context";
 import type { PlanContext, ActualContext, ExerciseSetData } from "@/lib/core/types";
 
 /**
@@ -73,10 +74,7 @@ export async function POST(request: Request) {
 
     // Build PlanContext from matched workout (if any)
     if (workout) {
-      plans.push({
-        workoutName: workout.workoutName,
-        exercises: [], // Workout plan exercises aren't stored in garmin_workouts table directly
-      });
+      plans.push(buildPlanContext(workout));
     }
   }
 

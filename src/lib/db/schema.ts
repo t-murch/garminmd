@@ -28,6 +28,7 @@ export const garminConnections = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     garminEmail: text("garmin_email").notNull(),
+    garminPassword: text("garmin_password"),
     garminSession: text("garmin_session"),
     lastSyncAt: integer("last_sync_at"),
   },
@@ -74,6 +75,7 @@ export const garminWorkouts = sqliteTable(
     workoutName: text("workout_name").notNull(),
     garminWorkoutId: text("garmin_workout_id"),
     payloadHash: text("payload_hash"),
+    resolvedData: text("resolved_data"),
     lastPushedAt: integer("last_pushed_at"),
   },
   (t) => [unique().on(t.userId, t.workoutName)],
