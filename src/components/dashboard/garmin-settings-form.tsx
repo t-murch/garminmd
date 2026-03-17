@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ErrorBanner } from "@/components/ui/error-banner";
 
 interface GarminSettingsFormProps {
   connected: boolean;
@@ -64,11 +65,7 @@ export function GarminSettingsForm({ connected }: GarminSettingsFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      {error && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="settings-garmin-email">Garmin Email</Label>

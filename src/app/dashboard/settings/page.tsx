@@ -15,7 +15,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Separator } from "@/components/ui/separator";
 import { GarminSettingsForm } from "@/components/dashboard/garmin-settings-form";
 
@@ -44,7 +44,11 @@ export default async function SettingsPage() {
     }
   }
 
-  const notionAuthUrl = getNotionAuthUrl();
+  // Generate OAuth state for CSRF protection on reconnect
+  const state = crypto.randomUUID();
+  session.oauthState = state;
+  await session.save();
+  const notionAuthUrl = getNotionAuthUrl(state);
 
   const notionPages = notionPageRows.map((p) => ({
     id: p.id,

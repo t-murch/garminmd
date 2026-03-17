@@ -5,17 +5,34 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { ErrorBanner } from "@/components/ui/error-banner";
 import { getNotionAuthUrl } from "@/lib/notion/oauth";
+import { getServerSession } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const notionUrl = getNotionAuthUrl();
+  const params = await searchParams;
+
+  // Generate and store OAuth state for CSRF protection
+  const session = await getServerSession();
+  const state = crypto.randomUUID();
+  session.oauthState = state;
+  await session.save();
+
+  const notionUrl = getNotionAuthUrl(state);
+
+  const errorMessages: Record<string, string> = {
+    no_code: "Notion did not return an authorization code. Please try again.",
+    token_exchange: "Failed to connect to Notion. Please try again.",
+    csrf: "Security validation failed. Please try again.",
+    unknown: "Something went wrong. Please try again.",
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -29,7 +46,11 @@ export default function LoginPage({
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
-          <LoginError searchParams={searchParams} />
+          {params.error && (
+            <ErrorBanner>
+              {errorMessages[params.error] ?? errorMessages.unknown}
+            </ErrorBanner>
+          )}
           <p className="text-center text-sm text-muted-foreground">
             Connect your Notion workspace to get started. GarminMD reads your
             training plan, pushes workouts to your Garmin watch, and delivers
@@ -43,27 +64,6 @@ export default function LoginPage({
           </a>
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-async function LoginError({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
-  const params = await searchParams;
-  if (!params.error) return null;
-
-  const messages: Record<string, string> = {
-    no_code: "Notion did not return an authorization code. Please try again.",
-    token_exchange: "Failed to connect to Notion. Please try again.",
-    unknown: "Something went wrong. Please try again.",
-  };
-
-  return (
-    <div className="w-full rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-      {messages[params.error] ?? messages.unknown}
     </div>
   );
 }

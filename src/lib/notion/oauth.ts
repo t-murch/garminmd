@@ -28,12 +28,13 @@ function getRedirectUri(): string {
 }
 
 /** Returns the full Notion OAuth authorization URL the browser should navigate to. */
-export function getNotionAuthUrl(): string {
+export function getNotionAuthUrl(state: string): string {
   const params = new URLSearchParams({
     client_id: getClientId(),
     response_type: "code",
     redirect_uri: getRedirectUri(),
     owner: "user",
+    state,
   });
   return `${NOTION_AUTH_URL}?${params.toString()}`;
 }

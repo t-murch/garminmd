@@ -159,8 +159,6 @@ export interface GarminMdConfig {
   };
   garmin: {
     email?: string;
-    /** Never stored in config — use env var or keychain */
-    password?: string;
   };
   llm: {
     provider: "anthropic" | "ollama";

@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, unique } from "drizzle-orm/sqlite-core";
 
 // ─── Users ─────────────────────────────────────────────────────
 
@@ -16,48 +16,60 @@ export type NewUser = typeof users.$inferInsert;
 
 // ─── Garmin Connections ────────────────────────────────────────
 
-export const garminConnections = sqliteTable("garmin_connections", {
-  id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id),
-  garminEmail: text("garmin_email").notNull(),
-  garminSession: text("garmin_session"),
-  lastSyncAt: integer("last_sync_at"),
-});
+export const garminConnections = sqliteTable(
+  "garmin_connections",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    garminEmail: text("garmin_email").notNull(),
+    garminSession: text("garmin_session"),
+    lastSyncAt: integer("last_sync_at"),
+  },
+  (t) => [unique().on(t.userId)],
+);
 
 export type GarminConnection = typeof garminConnections.$inferSelect;
 export type NewGarminConnection = typeof garminConnections.$inferInsert;
 
 // ─── Notion Pages ──────────────────────────────────────────────
 
-export const notionPages = sqliteTable("notion_pages", {
-  id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id),
-  notionPageId: text("notion_page_id").notNull(),
-  pageTitle: text("page_title").notNull(),
-  lastParsedAt: integer("last_parsed_at"),
-  contentHash: text("content_hash"),
-});
+export const notionPages = sqliteTable(
+  "notion_pages",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    notionPageId: text("notion_page_id").notNull(),
+    pageTitle: text("page_title").notNull(),
+    lastParsedAt: integer("last_parsed_at"),
+    contentHash: text("content_hash"),
+  },
+  (t) => [unique().on(t.userId, t.notionPageId)],
+);
 
 export type NotionPage = typeof notionPages.$inferSelect;
 export type NewNotionPage = typeof notionPages.$inferInsert;
 
 // ─── Garmin Workouts ───────────────────────────────────────────
 
-export const garminWorkouts = sqliteTable("garmin_workouts", {
-  id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id),
-  notionPageId: text("notion_page_id"),
-  workoutName: text("workout_name").notNull(),
-  garminWorkoutId: text("garmin_workout_id"),
-  payloadHash: text("payload_hash"),
-  lastPushedAt: integer("last_pushed_at"),
-});
+export const garminWorkouts = sqliteTable(
+  "garmin_workouts",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    notionPageId: text("notion_page_id"),
+    workoutName: text("workout_name").notNull(),
+    garminWorkoutId: text("garmin_workout_id"),
+    payloadHash: text("payload_hash"),
+    lastPushedAt: integer("last_pushed_at"),
+  },
+  (t) => [unique().on(t.userId, t.workoutName)],
+);
 
 export type GarminWorkout = typeof garminWorkouts.$inferSelect;
 export type NewGarminWorkout = typeof garminWorkouts.$inferInsert;

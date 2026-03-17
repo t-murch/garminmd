@@ -38,7 +38,6 @@ export class StrengthAdapter implements SportAdapter {
     // Estimate step count: each exercise = 1 step, each rest = 1 step
     const exerciseCount = workout.exercises.length;
     const restCount = exerciseCount - 1; // rest between exercises, not after last
-    const warmupCount = workout.exercises.filter((e) => e.isWarmup).length;
     const estimatedSteps = exerciseCount + restCount;
 
     if (estimatedSteps > GARMIN_MAX_STEPS) {

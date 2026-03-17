@@ -359,17 +359,9 @@ function detectDayOfWeek(heading: string): string | null {
 
 function detectSportType(heading: string): ParsedWorkout["sportTypeHint"] {
   const lower = heading.toLowerCase();
-  if (
-    lower.includes("run") ||
-    lower.includes("interval") ||
-    lower.includes("tempo")
-  )
+  if (/\b(running|run)\b/.test(lower) || /\btempo\b/.test(lower))
     return "running";
-  if (
-    lower.includes("cycling") ||
-    lower.includes("bike") ||
-    lower.includes("ride")
-  )
+  if (/\b(cycling|bike|ride)\b/.test(lower))
     return "cycling";
   return "strength";
 }

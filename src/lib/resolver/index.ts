@@ -44,8 +44,8 @@ export async function resolveExercise(
     if (cached) {
       return { garminType: cached, method: "cached", confidence: 1.0 };
     }
-  } catch {
-    // DB not available (e.g. in tests) — skip cache tier
+  } catch (err) {
+    console.warn("Exercise cache lookup failed:", err);
   }
 
   // Tier 3: LLM resolution
@@ -60,8 +60,8 @@ export async function resolveExercise(
           llmResult.garminType,
           "llm",
         );
-      } catch {
-        // Cache write failed — not critical, continue
+      } catch (err) {
+        console.warn("Exercise cache write failed:", err);
       }
       return {
         garminType: llmResult.garminType,
@@ -69,8 +69,8 @@ export async function resolveExercise(
         confidence: llmResult.confidence,
       };
     }
-  } catch {
-    // LLM not available — skip
+  } catch (err) {
+    console.warn("LLM resolution failed:", err);
   }
 
   return null;

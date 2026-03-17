@@ -4,6 +4,8 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ErrorBanner } from "@/components/ui/error-banner";
 
 interface GarminConnectFormProps {
   connected: boolean;
@@ -38,7 +40,7 @@ export function GarminConnectForm({
         throw new Error(data.error || "Failed to connect to Garmin");
       }
 
-      setConnectedEmail(data.email);
+      setConnectedEmail(email);
       setPassword("");
       onConnected();
     } catch (err) {
@@ -83,11 +85,7 @@ export function GarminConnectForm({
         app. Your credentials are encrypted and stored securely.
       </p>
 
-      {error && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="garmin-email">Garmin Email</Label>
@@ -118,7 +116,7 @@ export function GarminConnectForm({
       <Button type="submit" disabled={loading || !email || !password}>
         {loading ? (
           <>
-            <LoadingSpinner />
+            <LoadingSpinner className="mr-2" />
             Connecting...
           </>
         ) : (
@@ -126,30 +124,5 @@ export function GarminConnectForm({
         )}
       </Button>
     </form>
-  );
-}
-
-function LoadingSpinner() {
-  return (
-    <svg
-      className="mr-2 h-4 w-4 animate-spin"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-      />
-    </svg>
   );
 }

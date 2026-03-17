@@ -36,10 +36,13 @@ describe("normalizeName", () => {
     expect(normalizeName("Cable Pec Flyes")).toBe("cable pec fly");
   });
 
-  it("expands EZ to ez bar", () => {
-    expect(normalizeName("EZ Bar Curl")).toBe("ez bar bar curl");
-    // Note: "EZ" expands to "ez bar", so "EZ Bar" becomes "ez bar bar"
-    // This is acceptable — the dictionary entry uses the same normalization
+  it("expands EZ to ez bar without double-expansion", () => {
+    expect(normalizeName("EZ Bar Curl")).toBe("ez bar curl");
+    // "EZ Bar" keeps "bar" and doesn't double-expand to "ez bar bar"
+  });
+
+  it("expands standalone EZ to ez bar", () => {
+    expect(normalizeName("EZ Curl")).toBe("ez bar curl");
   });
 
   it("collapses whitespace", () => {

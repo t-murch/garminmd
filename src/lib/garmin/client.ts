@@ -71,6 +71,14 @@ export async function createGarminClient(
     }
   }
 
+  // If no real password is available, we can't attempt a fresh login.
+  // This happens when the push route uses stored tokens that have expired.
+  if (!password) {
+    throw new GarminAuthError(
+      "Garmin session expired. Please reconnect your Garmin account in Settings.",
+    );
+  }
+
   try {
     await gc.login(email, password);
   } catch (err) {

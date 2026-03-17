@@ -8,6 +8,13 @@
       "when": 1773441507620,
       "tag": "0000_grey_penance",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1773789632484,
+      "tag": "0001_green_lightspeed",
+      "breakpoints": true
     }
   ]
 }

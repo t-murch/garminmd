@@ -19,6 +19,7 @@ interface ThisWeekProps {
 /**
  * Attempts to match a workout name to a day of week by checking if the
  * workout name contains a day keyword (e.g. "Monday Push" -> Mon).
+ * Uses word-boundary matching to avoid false positives.
  */
 function matchDay(workoutName: string): string | null {
   const lower = workoutName.toLowerCase();
@@ -39,7 +40,7 @@ function matchDay(workoutName: string): string | null {
     sun: "Sun",
   };
   for (const [keyword, day] of Object.entries(dayMap)) {
-    if (lower.includes(keyword)) return day;
+    if (new RegExp(`\\b${keyword}\\b`).test(lower)) return day;
   }
   return null;
 }
@@ -47,14 +48,25 @@ function matchDay(workoutName: string): string | null {
 export function ThisWeek({ workouts }: ThisWeekProps) {
   // Build a map of day -> workout
   const dayWorkouts = new Map<string, Workout>();
+  const unmatchedWorkouts: Workout[] = [];
+
   for (const w of workouts) {
     const day = matchDay(w.workoutName);
     if (day) {
       dayWorkouts.set(day, w);
+    } else {
+      unmatchedWorkouts.push(w);
     }
   }
 
-  // If no workouts match any day, don't render
+  // If no workouts matched any day, assign them sequentially to weekdays
+  if (dayWorkouts.size === 0 && unmatchedWorkouts.length > 0) {
+    for (let i = 0; i < Math.min(unmatchedWorkouts.length, DAYS.length); i++) {
+      dayWorkouts.set(DAYS[i], unmatchedWorkouts[i]);
+    }
+    unmatchedWorkouts.length = 0;
+  }
+
   if (dayWorkouts.size === 0) return null;
 
   return (

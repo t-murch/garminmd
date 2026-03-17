@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ErrorBanner } from "@/components/ui/error-banner";
 import { timeAgo } from "@/lib/utils/time";
 
 interface Workout {
@@ -33,6 +35,7 @@ interface WorkoutListProps {
 }
 
 export function WorkoutList({ workouts, notionPages }: WorkoutListProps) {
+  const router = useRouter();
   const [syncing, setSyncing] = useState<string | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,8 +57,7 @@ export function WorkoutList({ workouts, notionPages }: WorkoutListProps) {
           throw new Error(data.error || `Failed to sync "${page.pageTitle}"`);
         }
       }
-      // Reload to show fresh data
-      window.location.reload();
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sync failed");
     } finally {
@@ -77,7 +79,7 @@ export function WorkoutList({ workouts, notionPages }: WorkoutListProps) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Failed to re-sync");
       }
-      window.location.reload();
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Re-sync failed");
     } finally {
@@ -101,11 +103,7 @@ export function WorkoutList({ workouts, notionPages }: WorkoutListProps) {
         )}
       </div>
 
-      {error && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
       {workouts.length === 0 ? (
         <Card>

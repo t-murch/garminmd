@@ -91,10 +91,24 @@ export async function syncWorkoutsToGarmin(
 
 /**
  * Compute a SHA-256 hash of the workout payload for change detection.
- * Uses a stable JSON serialization (keys sorted by the runtime, which is
- * deterministic for the same object shape).
+ * Uses a stable JSON serialization with recursively sorted keys to ensure
+ * identical payloads always produce the same hash regardless of property order.
  */
 export function hashPayload(payload: GarminWorkoutPayload): string {
-  const json = JSON.stringify(payload);
+  const json = stableStringify(payload);
   return createHash("sha256").update(json).digest("hex");
+}
+
+/** Recursively serialize an object with sorted keys for deterministic output. */
+function stableStringify(obj: unknown): string {
+  if (obj === null || typeof obj !== "object") return JSON.stringify(obj);
+  if (Array.isArray(obj))
+    return `[${obj.map(stableStringify).join(",")}]`;
+  const sorted = Object.keys(obj as Record<string, unknown>).sort();
+  return `{${sorted
+    .map(
+      (k) =>
+        `${JSON.stringify(k)}:${stableStringify((obj as Record<string, unknown>)[k])}`,
+    )
+    .join(",")}}`;
 }

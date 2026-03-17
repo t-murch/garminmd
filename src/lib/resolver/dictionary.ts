@@ -33,10 +33,19 @@ export function normalizeName(raw: string): string {
     .replace(/\(.*?\)/g, "") // strip parenthetical notes
     .trim();
 
-  // Expand abbreviations as whole words
-  name = name
-    .split(/\s+/)
-    .map((word) => ABBREVIATIONS[word] ?? word)
+  // Expand abbreviations as whole words (avoid double-expansion, e.g. "ez bar" → "ez bar bar")
+  const words = name.split(/\s+/);
+  name = words
+    .map((word, i) => {
+      const expansion = ABBREVIATIONS[word];
+      if (!expansion) return word;
+      // If expansion is multi-word and the next word already matches, skip expansion
+      const expansionWords = expansion.split(" ");
+      if (expansionWords.length > 1 && words[i + 1] === expansionWords[expansionWords.length - 1]) {
+        return word;
+      }
+      return expansion;
+    })
     .join(" ");
 
   // Normalize multiple spaces

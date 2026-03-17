@@ -8,7 +8,7 @@ import {
 } from "@/lib/db/queries";
 import { decrypt } from "@/lib/utils/crypto";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { ConnectionStatus } from "@/components/dashboard/connection-status";
 import { WorkoutList } from "@/components/dashboard/workout-list";
 import { ThisWeek } from "@/components/dashboard/this-week";

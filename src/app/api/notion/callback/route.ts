@@ -11,10 +11,20 @@ import { getServerSession } from "@/lib/auth/session";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+  const state = searchParams.get("state");
 
   if (!code) {
     return NextResponse.redirect(new URL("/login?error=no_code", request.url));
   }
+
+  // Validate OAuth state parameter to prevent CSRF attacks
+  const session = await getServerSession();
+  if (!state || !session.oauthState || state !== session.oauthState) {
+    return NextResponse.redirect(new URL("/login?error=csrf", request.url));
+  }
+  // Clear the state after validation
+  session.oauthState = undefined;
+  await session.save();
 
   let tokenResponse;
   try {
@@ -43,7 +53,6 @@ export async function GET(request: Request) {
   }
 
   // Create session
-  const session = await getServerSession();
   session.userId = userId;
   session.notionUserId = notionUserId;
   await session.save();

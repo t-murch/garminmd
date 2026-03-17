@@ -70,5 +70,8 @@ export async function POST(request: Request) {
     encryptedSession,
   );
 
-  return NextResponse.json({ success: true, email });
+  return NextResponse.json({ success: true });
 }
+
+// TODO: Add rate limiting to this endpoint (e.g., 5 attempts per 15 min per user)
+// to prevent credential-testing abuse and Garmin account lockouts.

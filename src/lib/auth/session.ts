@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 export interface SessionData {
   userId: string;
   notionUserId: string;
+  /** Transient: OAuth CSRF state token, cleared after callback validation */
+  oauthState?: string;
 }
 
 function getSessionOptions(): SessionOptions {

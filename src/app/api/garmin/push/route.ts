@@ -7,7 +7,11 @@ import {
   getNotionPages,
   upsertGarminConnection,
 } from "@/lib/db/queries";
-import { createGarminClient, GarminServiceError } from "@/lib/garmin/client";
+import {
+  createGarminClient,
+  GarminAuthError,
+  GarminServiceError,
+} from "@/lib/garmin/client";
 import { syncWorkoutsToGarmin, type SyncResult } from "@/lib/garmin/sync";
 import { StrengthAdapter } from "@/lib/adapters/strength";
 import type {
@@ -93,6 +97,9 @@ export async function POST(request: Request) {
     // We pass an empty password since we rely on stored session tokens.
     garminClient = await createGarminClient(email, "", existingTokens);
   } catch (err) {
+    if (err instanceof GarminAuthError) {
+      return NextResponse.json({ error: err.message }, { status: 401 });
+    }
     if (err instanceof GarminServiceError) {
       return NextResponse.json({ error: err.message }, { status: 502 });
     }
@@ -179,7 +186,7 @@ export async function POST(request: Request) {
   // This is best-effort; a failure here shouldn't block the response.
   try {
     const freshTokens = garminClient.getSessionTokens();
-    upsertGarminConnection(
+    await upsertGarminConnection(
       session.userId,
       garminConn.garminEmail,
       encrypt(JSON.stringify(freshTokens)),
