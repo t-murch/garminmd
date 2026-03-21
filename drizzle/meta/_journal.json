@@ -15,6 +15,13 @@
       "when": 1773789632484,
       "tag": "0001_green_lightspeed",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1774101861079,
+      "tag": "0002_military_christian_walker",
+      "breakpoints": true
     }
   ]
 }

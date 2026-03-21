@@ -34,7 +34,7 @@ function createTestDb() {
 
     CREATE TABLE garmin_connections (
       id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id),
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       garmin_email TEXT NOT NULL,
       garmin_session TEXT,
       last_sync_at INTEGER
@@ -42,7 +42,7 @@ function createTestDb() {
 
     CREATE TABLE notion_pages (
       id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id),
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       notion_page_id TEXT NOT NULL,
       page_title TEXT NOT NULL,
       last_parsed_at INTEGER,
@@ -51,7 +51,7 @@ function createTestDb() {
 
     CREATE TABLE garmin_workouts (
       id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id),
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       notion_page_id TEXT,
       workout_name TEXT NOT NULL,
       garmin_workout_id TEXT,
@@ -73,7 +73,7 @@ function createTestDb() {
 
     CREATE TABLE garmin_activities (
       id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id),
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       garmin_activity_id TEXT NOT NULL UNIQUE,
       activity_type TEXT,
       activity_name TEXT,
@@ -86,14 +86,18 @@ function createTestDb() {
 
     CREATE TABLE insights (
       id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id),
-      activity_id TEXT REFERENCES garmin_activities(id),
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      activity_id TEXT REFERENCES garmin_activities(id) ON DELETE SET NULL,
       insight_type TEXT NOT NULL,
       content TEXT NOT NULL,
       plan_context TEXT,
       actual_context TEXT,
       created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
     );
+
+    CREATE UNIQUE INDEX garmin_connections_user_id_unique ON garmin_connections(user_id);
+    CREATE UNIQUE INDEX notion_pages_user_id_notion_page_id_unique ON notion_pages(user_id, notion_page_id);
+    CREATE UNIQUE INDEX garmin_workouts_user_id_workout_name_unique ON garmin_workouts(user_id, workout_name);
   `);
 
   return db;
@@ -274,6 +278,26 @@ describe("database schema and queries", () => {
           db,
         ),
       ).rejects.toThrow();
+    });
+
+    it("cascade deletes child records when user is deleted", async () => {
+      const { id: userId } = await createUser("notion-cascade", "token", db);
+      await upsertGarminConnection(userId, "email", "session", db);
+      await upsertNotionPage(userId, "page-1", "Title", "hash", db);
+      await upsertGarminWorkout(userId, "Push Day", null, "hash", db);
+
+      // Verify children exist
+      expect(await getGarminConnection(userId, db)).toBeDefined();
+      expect(await getNotionPages(userId, db)).toHaveLength(1);
+      expect(await getGarminWorkouts(userId, db)).toHaveLength(1);
+
+      // Delete user
+      await db.delete(schema.users).where(sql`id = ${userId}`);
+
+      // Children should be gone
+      expect(await getGarminConnection(userId, db)).toBeUndefined();
+      expect(await getNotionPages(userId, db)).toHaveLength(0);
+      expect(await getGarminWorkouts(userId, db)).toHaveLength(0);
     });
   });
 });

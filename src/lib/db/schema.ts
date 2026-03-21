@@ -3,7 +3,7 @@ import { sqliteTable, text, integer, unique } from "drizzle-orm/sqlite-core";
 // ─── Users ─────────────────────────────────────────────────────
 
 export const users = sqliteTable("users", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   notionUserId: text("notion_user_id").notNull().unique(),
   notionAccessToken: text("notion_access_token").notNull(),
   createdAt: integer("created_at")
@@ -19,10 +19,10 @@ export type NewUser = typeof users.$inferInsert;
 export const garminConnections = sqliteTable(
   "garmin_connections",
   {
-    id: text("id").primaryKey(),
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     garminEmail: text("garmin_email").notNull(),
     garminSession: text("garmin_session"),
     lastSyncAt: integer("last_sync_at"),
@@ -38,10 +38,10 @@ export type NewGarminConnection = typeof garminConnections.$inferInsert;
 export const notionPages = sqliteTable(
   "notion_pages",
   {
-    id: text("id").primaryKey(),
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     notionPageId: text("notion_page_id").notNull(),
     pageTitle: text("page_title").notNull(),
     lastParsedAt: integer("last_parsed_at"),
@@ -58,10 +58,10 @@ export type NewNotionPage = typeof notionPages.$inferInsert;
 export const garminWorkouts = sqliteTable(
   "garmin_workouts",
   {
-    id: text("id").primaryKey(),
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     notionPageId: text("notion_page_id"),
     workoutName: text("workout_name").notNull(),
     garminWorkoutId: text("garmin_workout_id"),
@@ -77,7 +77,7 @@ export type NewGarminWorkout = typeof garminWorkouts.$inferInsert;
 // ─── Exercise Cache ────────────────────────────────────────────
 
 export const exerciseCache = sqliteTable("exercise_cache", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   rawName: text("raw_name").notNull(),
   normalizedName: text("normalized_name").notNull().unique(),
   garminCategory: text("garmin_category").notNull(),
@@ -96,10 +96,10 @@ export type NewExerciseCacheEntry = typeof exerciseCache.$inferInsert;
 // ─── Garmin Activities (Phase 2) ───────────────────────────────
 
 export const garminActivities = sqliteTable("garmin_activities", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id")
     .notNull()
-    .references(() => users.id),
+    .references(() => users.id, { onDelete: "cascade" }),
   garminActivityId: text("garmin_activity_id").notNull().unique(),
   activityType: text("activity_type"),
   activityName: text("activity_name"),
@@ -116,11 +116,11 @@ export type NewGarminActivity = typeof garminActivities.$inferInsert;
 // ─── Insights (Phase 2) ───────────────────────────────────────
 
 export const insights = sqliteTable("insights", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id")
     .notNull()
-    .references(() => users.id),
-  activityId: text("activity_id").references(() => garminActivities.id),
+    .references(() => users.id, { onDelete: "cascade" }),
+  activityId: text("activity_id").references(() => garminActivities.id, { onDelete: "set null" }),
   insightType: text("insight_type").notNull(),
   content: text("content").notNull(),
   planContext: text("plan_context"),

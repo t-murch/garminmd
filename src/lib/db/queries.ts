@@ -33,13 +33,14 @@ export async function createUser(
   encryptedToken: string,
   db: AppDatabase = getDb(),
 ) {
-  const id = crypto.randomUUID();
-  await db.insert(users).values({
-    id,
-    notionUserId,
-    notionAccessToken: encryptedToken,
-  });
-  return { id };
+  const [row] = await db
+    .insert(users)
+    .values({
+      notionUserId,
+      notionAccessToken: encryptedToken,
+    })
+    .returning({ id: users.id });
+  return { id: row.id };
 }
 
 export async function updateUserToken(
@@ -86,14 +87,15 @@ export async function upsertGarminConnection(
     return { id: existing.id };
   }
 
-  const id = crypto.randomUUID();
-  await db.insert(garminConnections).values({
-    id,
-    userId,
-    garminEmail: encryptedEmail,
-    garminSession: encryptedSession,
-  });
-  return { id };
+  const [row] = await db
+    .insert(garminConnections)
+    .values({
+      userId,
+      garminEmail: encryptedEmail,
+      garminSession: encryptedSession,
+    })
+    .returning({ id: garminConnections.id });
+  return { id: row.id };
 }
 
 // ─── Notion Pages ──────────────────────────────────────────────
@@ -133,16 +135,17 @@ export async function upsertNotionPage(
     return { id: existing.id };
   }
 
-  const id = crypto.randomUUID();
-  await db.insert(notionPages).values({
-    id,
-    userId,
-    notionPageId,
-    pageTitle: title,
-    contentHash,
-    lastParsedAt: Date.now(),
-  });
-  return { id };
+  const [row] = await db
+    .insert(notionPages)
+    .values({
+      userId,
+      notionPageId,
+      pageTitle: title,
+      contentHash,
+      lastParsedAt: Date.now(),
+    })
+    .returning({ id: notionPages.id });
+  return { id: row.id };
 }
 
 // ─── Garmin Workouts ───────────────────────────────────────────
@@ -182,16 +185,17 @@ export async function upsertGarminWorkout(
     return { id: existing.id };
   }
 
-  const id = crypto.randomUUID();
-  await db.insert(garminWorkouts).values({
-    id,
-    userId,
-    workoutName,
-    garminWorkoutId,
-    payloadHash,
-    lastPushedAt: Date.now(),
-  });
-  return { id };
+  const [row] = await db
+    .insert(garminWorkouts)
+    .values({
+      userId,
+      workoutName,
+      garminWorkoutId,
+      payloadHash,
+      lastPushedAt: Date.now(),
+    })
+    .returning({ id: garminWorkouts.id });
+  return { id: row.id };
 }
 
 // ─── Exercise Cache ────────────────────────────────────────────
@@ -217,7 +221,9 @@ export async function cacheExercise(
   },
   db: AppDatabase = getDb(),
 ) {
-  const id = crypto.randomUUID();
-  await db.insert(exerciseCache).values({ id, ...entry });
-  return { id };
+  const [row] = await db
+    .insert(exerciseCache)
+    .values(entry)
+    .returning({ id: exerciseCache.id });
+  return { id: row.id };
 }
