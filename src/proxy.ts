@@ -40,6 +40,5 @@ export const config = {
     "/api/garmin/:path*",
     "/api/notion/sync/:path*",
     "/api/notion/pages/:path*",
-    "/api/analyze/:path*",
   ],
 };
