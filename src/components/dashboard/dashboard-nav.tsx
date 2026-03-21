@@ -2,13 +2,22 @@
 
 import { useRouter } from "next/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export function DashboardNav() {
   const router = useRouter();
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
+    try {
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (!res.ok) {
+        toast.error("Logout failed. Try again.");
+        return;
+      }
+      router.push("/login");
+    } catch {
+      toast.error("Logout failed. Check your connection.");
+    }
   }
 
   return (
