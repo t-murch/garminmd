@@ -98,10 +98,18 @@ export async function POST(request: Request) {
     garminClient = await createGarminClient(email, "", existingTokens);
   } catch (err) {
     if (err instanceof GarminAuthError) {
-      return NextResponse.json({ error: err.message }, { status: 401 });
+      console.error("[garmin/push] Auth error:", err.message);
+      return NextResponse.json(
+        { error: "Garmin authentication failed. Please reconnect your account in Settings." },
+        { status: 401 },
+      );
     }
     if (err instanceof GarminServiceError) {
-      return NextResponse.json({ error: err.message }, { status: 502 });
+      console.error("[garmin/push] Service error:", err.message);
+      return NextResponse.json(
+        { error: "Garmin service is temporarily unavailable. Try again later." },
+        { status: 502 },
+      );
     }
     return NextResponse.json(
       {
@@ -175,9 +183,9 @@ export async function POST(request: Request) {
   try {
     results = await syncWorkoutsToGarmin(session.userId, payloads, garminClient);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    console.error("[garmin/push] Sync failed:", err instanceof Error ? err.message : err);
     return NextResponse.json(
-      { error: `Failed to sync workouts to Garmin: ${message}` },
+      { error: "Failed to sync workouts to Garmin. Try again later." },
       { status: 502 },
     );
   }

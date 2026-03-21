@@ -48,10 +48,18 @@ export async function POST(request: Request) {
     garminClient = await createGarminClient(email, password);
   } catch (err) {
     if (err instanceof GarminAuthError) {
-      return NextResponse.json({ error: err.message }, { status: 401 });
+      console.error("[garmin/auth] Auth error:", err.message);
+      return NextResponse.json(
+        { error: "Invalid Garmin credentials. Check your email and password." },
+        { status: 401 },
+      );
     }
     if (err instanceof GarminServiceError) {
-      return NextResponse.json({ error: err.message }, { status: 502 });
+      console.error("[garmin/auth] Service error:", err.message);
+      return NextResponse.json(
+        { error: "Garmin service is temporarily unavailable. Try again later." },
+        { status: 502 },
+      );
     }
     return NextResponse.json(
       { error: "Failed to connect to Garmin. Try again later." },
