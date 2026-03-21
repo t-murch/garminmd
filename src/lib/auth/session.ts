@@ -1,4 +1,8 @@
-import { getIronSession, type IronSession, type SessionOptions } from "iron-session";
+import {
+  getIronSession,
+  type IronSession,
+  type SessionOptions,
+} from "iron-session";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -24,6 +28,9 @@ function getSessionOptions(): SessionOptions {
   if (!secret) {
     throw new Error("NEXTAUTH_SECRET environment variable is required");
   }
+  if (secret.length < 32) {
+    throw new Error("NEXTAUTH_SECRET must be at least 32 characters long");
+  }
   return {
     password: secret,
     cookieName: "garminmd-session",
@@ -40,7 +47,10 @@ export async function getServerSession(): Promise<
   IronSession<SessionData> & { isLoggedIn: boolean }
 > {
   const cookieStore = await cookies();
-  const session = await getIronSession<SessionData>(cookieStore, getSessionOptions());
+  const session = await getIronSession<SessionData>(
+    cookieStore,
+    getSessionOptions(),
+  );
   return Object.assign(session, {
     isLoggedIn: !!session.userId,
   });
@@ -63,6 +73,9 @@ export async function requireAuth(): Promise<AuthResult> {
 /** Destroy session (for logout) — clears cookie data */
 export async function destroySession(): Promise<void> {
   const cookieStore = await cookies();
-  const session = await getIronSession<SessionData>(cookieStore, getSessionOptions());
+  const session = await getIronSession<SessionData>(
+    cookieStore,
+    getSessionOptions(),
+  );
   session.destroy();
 }
