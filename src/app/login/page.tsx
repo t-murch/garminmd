@@ -1,4 +1,3 @@
-import { buttonVariants } from "@/components/ui/button-variants";
 import {
   Card,
   CardContent,
@@ -7,8 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ErrorBanner } from "@/components/ui/error-banner";
-import { getServerSession } from "@/lib/auth/session";
-import { getNotionAuthUrl } from "@/lib/notion/oauth";
+import { NotionConnectButton } from "@/components/ui/notion-connect-button";
 
 export const dynamic = "force-dynamic";
 
@@ -18,14 +16,6 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
-
-  // Generate and store OAuth state for CSRF protection
-  const session = await getServerSession();
-  const state = crypto.randomUUID();
-  session.oauthState = state;
-  await session.save();
-
-  const notionUrl = getNotionAuthUrl(state);
 
   const errorMessages: Record<string, string> = {
     no_code: "Notion did not return an authorization code. Please try again.",
@@ -56,12 +46,9 @@ export default async function LoginPage({
             training plan, pushes workouts to your Garmin watch, and delivers AI
             coaching insights after every session.
           </p>
-          <a
-            href={notionUrl}
-            className={buttonVariants({ size: "lg", className: "w-full" })}
-          >
+          <NotionConnectButton size="lg" className="w-full">
             Connect with Notion
-          </a>
+          </NotionConnectButton>
         </CardContent>
       </Card>
     </div>

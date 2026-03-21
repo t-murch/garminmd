@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { GarminSettingsForm } from "@/components/dashboard/garmin-settings-form";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button-variants";
 import {
   Card,
   CardContent,
@@ -16,7 +15,7 @@ import {
   getNotionPages,
   getUserById,
 } from "@/lib/db/queries";
-import { getNotionAuthUrl } from "@/lib/notion/oauth";
+import { NotionConnectButton } from "@/components/ui/notion-connect-button";
 import { decrypt } from "@/lib/utils/crypto";
 
 export default async function SettingsPage() {
@@ -43,12 +42,6 @@ export default async function SettingsPage() {
       garminEmail = "(encrypted)";
     }
   }
-
-  // Generate OAuth state for CSRF protection on reconnect
-  const state = crypto.randomUUID();
-  session.oauthState = state;
-  await session.save();
-  const notionAuthUrl = getNotionAuthUrl(state);
 
   const notionPages = notionPageRows.map((p) => ({
     id: p.id,
@@ -83,12 +76,9 @@ export default async function SettingsPage() {
                 <Badge variant="outline">No pages synced</Badge>
               )}
             </div>
-            <a
-              href={notionAuthUrl}
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
+            <NotionConnectButton variant="outline" size="sm">
               Reconnect Notion
-            </a>
+            </NotionConnectButton>
           </div>
 
           {notionPages.length > 0 && (
