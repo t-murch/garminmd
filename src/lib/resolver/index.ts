@@ -6,9 +6,9 @@ import type {
   ResolvedWorkout,
 } from "@/lib/core/types";
 import { lbsToKg } from "@/lib/utils/units";
-import { normalizeName, getDictionaryEntries } from "./dictionary";
+import { cacheResolution, getCachedResolution } from "./cache";
+import { getDictionaryEntries, normalizeName } from "./dictionary";
 import { exactMatch } from "./exact-match";
-import { getCachedResolution, cacheResolution } from "./cache";
 import { llmMatch } from "./llm-match";
 
 const DEFAULT_REPS = 12;
@@ -54,12 +54,7 @@ export async function resolveExercise(
     if (llmResult) {
       // Cache the successful LLM result for future lookups
       try {
-        await cacheResolution(
-          rawName,
-          normalized,
-          llmResult.garminType,
-          "llm",
-        );
+        await cacheResolution(rawName, normalized, llmResult.garminType, "llm");
       } catch (err) {
         console.warn("Exercise cache write failed:", err);
       }
@@ -102,8 +97,7 @@ export async function resolveWorkout(
     const result = await resolveExercise(exercise.rawName);
 
     // Effective reps: exercise → section default → config → 12
-    const effectiveReps =
-      exercise.reps ?? parsed.defaultReps ?? configReps;
+    const effectiveReps = exercise.reps ?? parsed.defaultReps ?? configReps;
 
     // Effective rest: exercise → section default → config → 90
     // This is the 4-tier chain from rest-detector:

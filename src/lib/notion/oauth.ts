@@ -23,7 +23,8 @@ function getClientSecret(): string {
 
 function getRedirectUri(): string {
   return (
-    process.env.NOTION_REDIRECT_URI || "http://localhost:3000/api/notion/callback"
+    process.env.NOTION_REDIRECT_URI ||
+    "http://localhost:3000/api/notion/callback"
   );
 }
 

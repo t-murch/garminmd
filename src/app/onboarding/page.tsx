@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "@/lib/auth/session";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
+import { getServerSession } from "@/lib/auth/session";
 
 export default async function OnboardingPage() {
   const session = await getServerSession();

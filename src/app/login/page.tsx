@@ -1,3 +1,4 @@
+import { buttonVariants } from "@/components/ui/button-variants";
 import {
   Card,
   CardContent,
@@ -5,10 +6,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button-variants";
 import { ErrorBanner } from "@/components/ui/error-banner";
-import { getNotionAuthUrl } from "@/lib/notion/oauth";
 import { getServerSession } from "@/lib/auth/session";
+import { getNotionAuthUrl } from "@/lib/notion/oauth";
 
 export const dynamic = "force-dynamic";
 
@@ -53,8 +53,8 @@ export default async function LoginPage({
           )}
           <p className="text-center text-sm text-muted-foreground">
             Connect your Notion workspace to get started. GarminMD reads your
-            training plan, pushes workouts to your Garmin watch, and delivers
-            AI coaching insights after every session.
+            training plan, pushes workouts to your Garmin watch, and delivers AI
+            coaching insights after every session.
           </p>
           <a
             href={notionUrl}

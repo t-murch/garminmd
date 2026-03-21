@@ -1,14 +1,11 @@
 import type {
-  GarminWorkoutPayload,
-  GarminWorkoutStep,
-} from "@/lib/core/types";
-import type {
-  IWorkoutDetail,
-  IWorkoutStep,
-  IWorkoutSegment,
-  IWorkout,
   IGarminTokens,
+  IWorkout,
+  IWorkoutDetail,
+  IWorkoutSegment,
+  IWorkoutStep,
 } from "@flow-js/garmin-connect";
+import type { GarminWorkoutPayload, GarminWorkoutStep } from "@/lib/core/types";
 
 // ─── Public Types ──────────────────────────────────────────────
 
@@ -92,9 +89,7 @@ export async function createGarminClient(
         "Invalid Garmin credentials. Check your email and password.",
       );
     }
-    throw new GarminServiceError(
-      `Garmin Connect is unavailable: ${message}`,
-    );
+    throw new GarminServiceError(`Garmin Connect is unavailable: ${message}`);
   }
 
   return wrapClient(gc);
@@ -221,7 +216,7 @@ function mapStep(step: GarminWorkoutStep): IWorkoutStep {
   // The library's IWorkoutStep type uses literal `null` for fields like
   // category, exerciseName, weightValue, weightUnit. The Garmin API
   // actually accepts string/number values there, so we assert the type.
-  return ({
+  return {
     type: "ExecutableStepDTO",
     stepId: 0,
     stepOrder: step.stepOrder,
@@ -271,8 +266,10 @@ function mapStep(step: GarminWorkoutStep): IWorkoutStep {
     workoutProvider: null,
     providerExerciseSourceId: null,
     weightValue: step.weightValue?.value ?? null,
-    weightUnit: step.weightValue ? { unitId: 4, unitKey: "kg", factor: null } : null,
-  }) as IWorkoutStep;
+    weightUnit: step.weightValue
+      ? { unitId: 4, unitKey: "kg", factor: null }
+      : null,
+  } as IWorkoutStep;
 }
 
 function endConditionTypeId(key: string): number {

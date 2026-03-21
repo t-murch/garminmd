@@ -1,23 +1,23 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "@/lib/auth/session";
-import {
-  getUserById,
-  getGarminConnection,
-  getNotionPages,
-} from "@/lib/db/queries";
-import { decrypt } from "@/lib/utils/crypto";
-import { getNotionAuthUrl } from "@/lib/notion/oauth";
+import { GarminSettingsForm } from "@/components/dashboard/garmin-settings-form";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button-variants";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button-variants";
 import { Separator } from "@/components/ui/separator";
-import { GarminSettingsForm } from "@/components/dashboard/garmin-settings-form";
+import { getServerSession } from "@/lib/auth/session";
+import {
+  getGarminConnection,
+  getNotionPages,
+  getUserById,
+} from "@/lib/db/queries";
+import { getNotionAuthUrl } from "@/lib/notion/oauth";
+import { decrypt } from "@/lib/utils/crypto";
 
 export default async function SettingsPage() {
   const session = await getServerSession();

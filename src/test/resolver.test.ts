@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { normalizeName, loadDictionary } from "@/lib/resolver/dictionary";
+import type { ParsedWorkout } from "@/lib/core/types";
+import { loadDictionary, normalizeName } from "@/lib/resolver/dictionary";
 import { exactMatch } from "@/lib/resolver/exact-match";
 import { resolveWorkout } from "@/lib/resolver/index";
-import { lbsToKg, kgToLbs } from "@/lib/utils/units";
-import type { ParsedWorkout } from "@/lib/core/types";
+import { kgToLbs, lbsToKg } from "@/lib/utils/units";
 
 // ─── normalizeName ────────────────────────────────────────────
 
@@ -74,53 +74,53 @@ describe("exactMatch", () => {
   it("resolves DB Bench Press to DUMBBELL_BENCH_PRESS", () => {
     const result = exactMatch("DB Bench Press");
     expect(result).not.toBeNull();
-    expect(result!.exerciseName).toBe("DUMBBELL_BENCH_PRESS");
-    expect(result!.category).toBe("BENCH_PRESS");
-    expect(result!.categoryId).toBe(10);
+    expect(result?.exerciseName).toBe("DUMBBELL_BENCH_PRESS");
+    expect(result?.category).toBe("BENCH_PRESS");
+    expect(result?.categoryId).toBe(10);
   });
 
   it("resolves Lat Pulldown", () => {
     const result = exactMatch("Lat Pulldown");
     expect(result).not.toBeNull();
-    expect(result!.exerciseName).toBe("LAT_PULLDOWN");
-    expect(result!.category).toBe("LAT_PULL");
+    expect(result?.exerciseName).toBe("LAT_PULLDOWN");
+    expect(result?.category).toBe("LAT_PULL");
   });
 
   it("resolves exercise with parenthetical stripped", () => {
     const result = exactMatch("Single Arm Cable Row (each side)");
     expect(result).not.toBeNull();
-    expect(result!.exerciseName).toBe("SINGLE_ARM_CABLE_ROW");
-    expect(result!.category).toBe("ROW");
+    expect(result?.exerciseName).toBe("SINGLE_ARM_CABLE_ROW");
+    expect(result?.category).toBe("ROW");
   });
 
   it("resolves Incline DB Bench Press", () => {
     const result = exactMatch("Incline DB Bench Press");
     expect(result).not.toBeNull();
-    expect(result!.exerciseName).toBe("INCLINE_DUMBBELL_BENCH_PRESS");
+    expect(result?.exerciseName).toBe("INCLINE_DUMBBELL_BENCH_PRESS");
   });
 
   it("resolves Cable Pec Flies with spelling normalization", () => {
     const result = exactMatch("Cable Pec Flies");
     expect(result).not.toBeNull();
-    expect(result!.category).toBe("FLYE");
+    expect(result?.category).toBe("FLYE");
   });
 
   it("resolves Cable Tricep Pressdown", () => {
     const result = exactMatch("Cable Tricep Pressdown");
     expect(result).not.toBeNull();
-    expect(result!.category).toBe("TRICEPS_EXTENSION");
+    expect(result?.category).toBe("TRICEPS_EXTENSION");
   });
 
   it("resolves Cable Overhead Tricep Pull", () => {
     const result = exactMatch("Cable Overhead Tricep Pull");
     expect(result).not.toBeNull();
-    expect(result!.exerciseName).toBe("CABLE_OVERHEAD_TRICEPS_EXTENSION");
+    expect(result?.exerciseName).toBe("CABLE_OVERHEAD_TRICEPS_EXTENSION");
   });
 
   it("resolves EZ Bar Skull Crusher", () => {
     const result = exactMatch("EZ Bar Skull Crusher");
     expect(result).not.toBeNull();
-    expect(result!.category).toBe("TRICEPS_EXTENSION");
+    expect(result?.category).toBe("TRICEPS_EXTENSION");
   });
 
   it("returns null for unknown exercises", () => {
@@ -208,7 +208,7 @@ describe("resolveWorkout", () => {
 
     const bench = result.exercises[0];
     expect(bench.garminType).not.toBeNull();
-    expect(bench.garminType!.exerciseName).toBe("DUMBBELL_BENCH_PRESS");
+    expect(bench.garminType?.exerciseName).toBe("DUMBBELL_BENCH_PRESS");
     expect(bench.resolutionMethod).toBe("exact");
     expect(bench.confidence).toBe(1.0);
   });

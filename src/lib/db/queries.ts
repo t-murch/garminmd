@@ -1,19 +1,16 @@
 import { eq } from "drizzle-orm";
-import { getDb, type AppDatabase } from "./index";
+import { type AppDatabase, getDb } from "./index";
 import {
-  users,
-  garminConnections,
-  notionPages,
-  garminWorkouts,
   exerciseCache,
+  garminConnections,
+  garminWorkouts,
+  notionPages,
+  users,
 } from "./schema";
 
 // ─── Users ─────────────────────────────────────────────────────
 
-export async function getUserById(
-  userId: string,
-  db: AppDatabase = getDb(),
-) {
+export async function getUserById(userId: string, db: AppDatabase = getDb()) {
   return db.query.users.findFirst({
     where: eq(users.id, userId),
   });

@@ -1,6 +1,6 @@
 import type { GarminExerciseType, ResolutionMethod } from "@/lib/core/types";
-import { getCachedExercise, cacheExercise } from "@/lib/db/queries";
 import type { AppDatabase } from "@/lib/db/index";
+import { cacheExercise, getCachedExercise } from "@/lib/db/queries";
 
 /**
  * Tier 2a: Look up a previously resolved exercise from the database cache.

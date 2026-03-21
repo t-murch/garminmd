@@ -86,9 +86,7 @@ function extractPageTitle(page: Record<string, unknown>): string {
   for (const prop of Object.values(props)) {
     if (prop?.type === "title") {
       const titleParts = prop.title ?? [];
-      return (
-        titleParts.map((t) => t.plain_text ?? "").join("") || "Untitled"
-      );
+      return titleParts.map((t) => t.plain_text ?? "").join("") || "Untitled";
     }
   }
   return "Untitled";

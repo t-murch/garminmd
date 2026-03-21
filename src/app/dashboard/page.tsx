@@ -1,17 +1,17 @@
 import { redirect } from "next/navigation";
+import { ConnectionStatus } from "@/components/dashboard/connection-status";
+import { ThisWeek } from "@/components/dashboard/this-week";
+import { WorkoutList } from "@/components/dashboard/workout-list";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { getServerSession } from "@/lib/auth/session";
 import {
-  getUserById,
   getGarminConnection,
-  getNotionPages,
   getGarminWorkouts,
+  getNotionPages,
+  getUserById,
 } from "@/lib/db/queries";
 import { decrypt } from "@/lib/utils/crypto";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { buttonVariants } from "@/components/ui/button-variants";
-import { ConnectionStatus } from "@/components/dashboard/connection-status";
-import { WorkoutList } from "@/components/dashboard/workout-list";
-import { ThisWeek } from "@/components/dashboard/this-week";
 
 export default async function DashboardPage() {
   const session = await getServerSession();
@@ -90,10 +90,7 @@ export default async function DashboardPage() {
 
       {workouts.length > 0 && <ThisWeek workouts={workouts} />}
 
-      <WorkoutList
-        workouts={workouts}
-        notionPages={notionPages}
-      />
+      <WorkoutList workouts={workouts} notionPages={notionPages} />
     </div>
   );
 }

@@ -1,10 +1,10 @@
+import { describe, expect, it } from "vitest";
 import { parseMarkdown } from "@/lib/parser/markdown";
 import {
   detectRepsFromHeader,
   detectRestFromHeader,
 } from "@/lib/parser/rest-detector";
 import { selectWeek } from "@/lib/parser/week-selector";
-import { describe, expect, it } from "vitest";
 
 // ─── Fixture: Your Actual Monday Push Day from "Health is Wealth" ───
 

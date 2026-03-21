@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Card, CardContent } from "@/components/ui/card";
 import { ErrorBanner } from "@/components/ui/error-banner";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { ParsedWorkout } from "@/lib/core/types";
 
 interface NotionPage {
@@ -114,9 +114,7 @@ export function PageSelector({
           <Card
             key={page.id}
             className={`cursor-pointer transition-colors hover:bg-muted/50 ${
-              selectedPageId === page.id
-                ? "ring-2 ring-primary"
-                : ""
+              selectedPageId === page.id ? "ring-2 ring-primary" : ""
             }`}
             size="sm"
             onClick={() => !syncing && handleSelect(page)}

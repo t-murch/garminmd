@@ -74,9 +74,7 @@
       "indexes": {
         "exercise_cache_normalized_name_unique": {
           "name": "exercise_cache_normalized_name_unique",
-          "columns": [
-            "normalized_name"
-          ],
+          "columns": ["normalized_name"],
           "isUnique": true
         }
       },
@@ -162,9 +160,7 @@
       "indexes": {
         "garmin_activities_garmin_activity_id_unique": {
           "name": "garmin_activities_garmin_activity_id_unique",
-          "columns": [
-            "garmin_activity_id"
-          ],
+          "columns": ["garmin_activity_id"],
           "isUnique": true
         }
       },
@@ -173,12 +169,8 @@
           "name": "garmin_activities_user_id_users_id_fk",
           "tableFrom": "garmin_activities",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -229,9 +221,7 @@
       "indexes": {
         "garmin_connections_user_id_unique": {
           "name": "garmin_connections_user_id_unique",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": true
         }
       },
@@ -240,12 +230,8 @@
           "name": "garmin_connections_user_id_users_id_fk",
           "tableFrom": "garmin_connections",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -310,10 +296,7 @@
       "indexes": {
         "garmin_workouts_user_id_workout_name_unique": {
           "name": "garmin_workouts_user_id_workout_name_unique",
-          "columns": [
-            "user_id",
-            "workout_name"
-          ],
+          "columns": ["user_id", "workout_name"],
           "isUnique": true
         }
       },
@@ -322,12 +305,8 @@
           "name": "garmin_workouts_user_id_users_id_fk",
           "tableFrom": "garmin_workouts",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -402,12 +381,8 @@
           "name": "insights_user_id_users_id_fk",
           "tableFrom": "insights",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -415,12 +390,8 @@
           "name": "insights_activity_id_garmin_activities_id_fk",
           "tableFrom": "insights",
           "tableTo": "garmin_activities",
-          "columnsFrom": [
-            "activity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["activity_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -478,10 +449,7 @@
       "indexes": {
         "notion_pages_user_id_notion_page_id_unique": {
           "name": "notion_pages_user_id_notion_page_id_unique",
-          "columns": [
-            "user_id",
-            "notion_page_id"
-          ],
+          "columns": ["user_id", "notion_page_id"],
           "isUnique": true
         }
       },
@@ -490,12 +458,8 @@
           "name": "notion_pages_user_id_users_id_fk",
           "tableFrom": "notion_pages",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -539,9 +503,7 @@
       "indexes": {
         "users_notion_user_id_unique": {
           "name": "users_notion_user_id_unique",
-          "columns": [
-            "notion_user_id"
-          ],
+          "columns": ["notion_user_id"],
           "isUnique": true
         }
       },

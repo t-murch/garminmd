@@ -13,7 +13,7 @@
 export function detectRestFromHeader(heading: string): number | null {
   // Match patterns: "Rest 60–90s", "Rest 90s", "Rest: 60-90 sec", "rest 120 seconds"
   const patterns = [
-    /rest[:\s]*(\d+)\s*[–\-]\s*(\d+)\s*s(?:ec(?:onds?)?)?/i,
+    /rest[:\s]*(\d+)\s*[–-]\s*(\d+)\s*s(?:ec(?:onds?)?)?/i,
     /rest[:\s]*(\d+)\s*s(?:ec(?:onds?)?)?/i,
   ];
 
@@ -21,7 +21,7 @@ export function detectRestFromHeader(heading: string): number | null {
     const match = heading.match(pattern);
     if (match) {
       // If range (60–90), use the upper bound
-      return match[2] ? parseInt(match[2]) : parseInt(match[1]);
+      return match[2] ? parseInt(match[2], 10) : parseInt(match[1], 10);
     }
   }
 
@@ -33,12 +33,12 @@ export function detectRestFromHeader(heading: string): number | null {
  * Returns the upper bound (12) as the target.
  */
 export function detectRepsFromHeader(heading: string): number | null {
-  const patterns = [/(\d+)\s*[–\-]\s*(\d+)\s*reps?/i, /(\d+)\s*reps?/i];
+  const patterns = [/(\d+)\s*[–-]\s*(\d+)\s*reps?/i, /(\d+)\s*reps?/i];
 
   for (const pattern of patterns) {
     const match = heading.match(pattern);
     if (match) {
-      return match[2] ? parseInt(match[2]) : parseInt(match[1]);
+      return match[2] ? parseInt(match[2], 10) : parseInt(match[1], 10);
     }
   }
 

@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
-  CardAction,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { timeAgo } from "@/lib/utils/time";
 
@@ -108,8 +108,8 @@ export function WorkoutList({ workouts, notionPages }: WorkoutListProps) {
       {workouts.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            No workouts synced yet. Connect Notion and push your first
-            workouts from the onboarding flow.
+            No workouts synced yet. Connect Notion and push your first workouts
+            from the onboarding flow.
           </CardContent>
         </Card>
       ) : (
@@ -117,9 +117,7 @@ export function WorkoutList({ workouts, notionPages }: WorkoutListProps) {
           {workouts.map((workout) => (
             <Card key={workout.id} size="sm">
               <CardHeader className="flex-row items-center justify-between">
-                <CardTitle className="text-sm">
-                  {workout.workoutName}
-                </CardTitle>
+                <CardTitle className="text-sm">{workout.workoutName}</CardTitle>
                 <CardAction>
                   <Button
                     variant="ghost"

@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "@/lib/auth/session";
+import { buttonVariants } from "@/components/ui/button-variants";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button-variants";
+import { getServerSession } from "@/lib/auth/session";
 
 export default async function Home() {
   const session = await getServerSession();
@@ -38,8 +38,8 @@ export default async function Home() {
             <li className="flex items-start gap-2">
               <span className="mt-0.5 text-primary">2.</span>
               <span>
-                GarminMD pushes your plan to Garmin Connect. Sync your watch
-                and train.
+                GarminMD pushes your plan to Garmin Connect. Sync your watch and
+                train.
               </span>
             </li>
             <li className="flex items-start gap-2">

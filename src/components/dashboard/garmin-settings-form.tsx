@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ErrorBanner } from "@/components/ui/error-banner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ErrorBanner } from "@/components/ui/error-banner";
 
 interface GarminSettingsFormProps {
   connected: boolean;
@@ -52,11 +52,7 @@ export function GarminSettingsForm({ connected }: GarminSettingsFormProps) {
             ? "Credentials updated successfully."
             : "Your Garmin credentials are stored securely."}
         </span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowForm(true)}
-        >
+        <Button variant="outline" size="sm" onClick={() => setShowForm(true)}>
           Update Credentials
         </Button>
       </div>

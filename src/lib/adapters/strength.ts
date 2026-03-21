@@ -1,9 +1,9 @@
 import type {
-  SportAdapter,
-  ResolvedWorkout,
-  ResolvedExercise,
   GarminWorkoutPayload,
   GarminWorkoutStep,
+  ResolvedExercise,
+  ResolvedWorkout,
+  SportAdapter,
   ValidationResult,
 } from "../core/types";
 

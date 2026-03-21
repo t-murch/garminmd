@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Button, buttonVariants } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 export function DashboardNav() {
   const router = useRouter();

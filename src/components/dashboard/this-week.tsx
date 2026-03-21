@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
@@ -76,11 +76,7 @@ export function ThisWeek({ workouts }: ThisWeekProps) {
         {DAYS.map((day) => {
           const workout = dayWorkouts.get(day);
           return (
-            <Card
-              key={day}
-              size="sm"
-              className={!workout ? "opacity-40" : ""}
-            >
+            <Card key={day} size="sm" className={!workout ? "opacity-40" : ""}>
               <CardHeader>
                 <CardTitle className="text-center text-xs uppercase tracking-wide text-muted-foreground">
                   {day}
@@ -91,12 +87,18 @@ export function ThisWeek({ workouts }: ThisWeekProps) {
                   <>
                     <span className="text-center text-xs font-medium leading-tight">
                       {workout.workoutName
-                        .replace(/monday|tuesday|wednesday|thursday|friday|saturday|sunday/gi, "")
+                        .replace(
+                          /monday|tuesday|wednesday|thursday|friday|saturday|sunday/gi,
+                          "",
+                        )
                         .trim()
                         .replace(/^[-—:]\s*/, "") || workout.workoutName}
                     </span>
                     {workout.garminWorkoutId ? (
-                      <Badge variant="secondary" className="mt-1 text-[10px] bg-green-600/10 text-green-700 dark:text-green-400">
+                      <Badge
+                        variant="secondary"
+                        className="mt-1 text-[10px] bg-green-600/10 text-green-700 dark:text-green-400"
+                      >
                         Synced
                       </Badge>
                     ) : (

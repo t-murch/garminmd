@@ -1,10 +1,7 @@
 import { createHash } from "node:crypto";
 import type { GarminWorkoutPayload } from "@/lib/core/types";
+import { getGarminWorkouts, upsertGarminWorkout } from "@/lib/db/queries";
 import type { GarminClient } from "./client";
-import {
-  getGarminWorkouts,
-  upsertGarminWorkout,
-} from "@/lib/db/queries";
 
 // ─── Public Types ──────────────────────────────────────────────
 
@@ -76,7 +73,12 @@ export async function syncWorkoutsToGarmin(
 
     // New workout — create on Garmin
     const garminWorkoutId = await garminClient.pushWorkout(payload);
-    await upsertGarminWorkout(userId, payload.workoutName, garminWorkoutId, hash);
+    await upsertGarminWorkout(
+      userId,
+      payload.workoutName,
+      garminWorkoutId,
+      hash,
+    );
     results.push({
       workoutName: payload.workoutName,
       action: "created",
@@ -102,8 +104,7 @@ export function hashPayload(payload: GarminWorkoutPayload): string {
 /** Recursively serialize an object with sorted keys for deterministic output. */
 function stableStringify(obj: unknown): string {
   if (obj === null || typeof obj !== "object") return JSON.stringify(obj);
-  if (Array.isArray(obj))
-    return `[${obj.map(stableStringify).join(",")}]`;
+  if (Array.isArray(obj)) return `[${obj.map(stableStringify).join(",")}]`;
   const sorted = Object.keys(obj as Record<string, unknown>).sort();
   return `{${sorted
     .map(

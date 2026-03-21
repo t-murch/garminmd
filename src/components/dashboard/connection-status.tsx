@@ -1,11 +1,6 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ConnectionStatusProps {
   notionConnected: boolean;
@@ -26,7 +21,10 @@ export function ConnectionStatus({
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle className="text-sm">Notion</CardTitle>
           {notionConnected ? (
-            <Badge variant="secondary" className="bg-green-600/10 text-green-700 dark:text-green-400">
+            <Badge
+              variant="secondary"
+              className="bg-green-600/10 text-green-700 dark:text-green-400"
+            >
               Connected
             </Badge>
           ) : (
@@ -53,7 +51,10 @@ export function ConnectionStatus({
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle className="text-sm">Garmin</CardTitle>
           {garminConnected ? (
-            <Badge variant="secondary" className="bg-green-600/10 text-green-700 dark:text-green-400">
+            <Badge
+              variant="secondary"
+              className="bg-green-600/10 text-green-700 dark:text-green-400"
+            >
               Connected
             </Badge>
           ) : (

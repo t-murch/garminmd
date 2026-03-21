@@ -1,21 +1,21 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
 import { sql } from "drizzle-orm";
-import * as schema from "@/lib/db/schema";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
+  cacheExercise,
   createUser,
+  getCachedExercise,
+  getGarminConnection,
+  getGarminWorkouts,
+  getNotionPages,
   getUserByNotionId,
   updateUserToken,
   upsertGarminConnection,
-  getGarminConnection,
-  upsertNotionPage,
-  getNotionPages,
   upsertGarminWorkout,
-  getGarminWorkouts,
-  cacheExercise,
-  getCachedExercise,
+  upsertNotionPage,
 } from "@/lib/db/queries";
+import * as schema from "@/lib/db/schema";
 
 function createTestDb() {
   const sqlite = new Database(":memory:");
@@ -119,9 +119,9 @@ describe("database schema and queries", () => {
 
       const user = await getUserByNotionId("notion-123", db);
       expect(user).toBeDefined();
-      expect(user!.notionUserId).toBe("notion-123");
-      expect(user!.notionAccessToken).toBe("encrypted-token-abc");
-      expect(user!.createdAt).toBeGreaterThan(0);
+      expect(user?.notionUserId).toBe("notion-123");
+      expect(user?.notionAccessToken).toBe("encrypted-token-abc");
+      expect(user?.createdAt).toBeGreaterThan(0);
     });
 
     it("returns undefined for non-existent notion ID", async () => {
@@ -139,7 +139,7 @@ describe("database schema and queries", () => {
       await updateUserToken(id, "new-token", db);
 
       const user = await getUserByNotionId("notion-456", db);
-      expect(user!.notionAccessToken).toBe("new-token");
+      expect(user?.notionAccessToken).toBe("new-token");
     });
   });
 
@@ -156,8 +156,8 @@ describe("database schema and queries", () => {
 
       const conn = await getGarminConnection(userId, db);
       expect(conn).toBeDefined();
-      expect(conn!.garminEmail).toBe("enc-email");
-      expect(conn!.garminSession).toBe("enc-session");
+      expect(conn?.garminEmail).toBe("enc-email");
+      expect(conn?.garminSession).toBe("enc-session");
     });
 
     it("updates existing connection on second upsert", async () => {
@@ -166,9 +166,9 @@ describe("database schema and queries", () => {
       await upsertGarminConnection(userId, "email-v2", "session-v2", db);
 
       const conn = await getGarminConnection(userId, db);
-      expect(conn!.garminEmail).toBe("email-v2");
-      expect(conn!.garminSession).toBe("session-v2");
-      expect(conn!.lastSyncAt).toBeGreaterThan(0);
+      expect(conn?.garminEmail).toBe("email-v2");
+      expect(conn?.garminSession).toBe("session-v2");
+      expect(conn?.lastSyncAt).toBeGreaterThan(0);
     });
   });
 
@@ -240,9 +240,9 @@ describe("database schema and queries", () => {
 
       const cached = await getCachedExercise("dumbbell bench press", db);
       expect(cached).toBeDefined();
-      expect(cached!.garminCategory).toBe("BENCH_PRESS");
-      expect(cached!.garminExerciseName).toBe("DUMBBELL_BENCH_PRESS");
-      expect(cached!.resolutionMethod).toBe("exact");
+      expect(cached?.garminCategory).toBe("BENCH_PRESS");
+      expect(cached?.garminExerciseName).toBe("DUMBBELL_BENCH_PRESS");
+      expect(cached?.resolutionMethod).toBe("exact");
     });
 
     it("returns undefined for uncached exercise", async () => {
@@ -271,12 +271,7 @@ describe("database schema and queries", () => {
   describe("foreign key constraints", () => {
     it("rejects garmin connection for non-existent user", async () => {
       await expect(
-        upsertGarminConnection(
-          "fake-user-id",
-          "email",
-          "session",
-          db,
-        ),
+        upsertGarminConnection("fake-user-id", "email", "session", db),
       ).rejects.toThrow();
     });
 
