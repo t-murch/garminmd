@@ -1,0 +1,28 @@
+flowchart TD
+    A["Determine rest period<br/>for exercise"] --> B{"Tier 1:<br/>Explicit 'Rest'<br/>column in table?"}
+
+    B -->|"✓ Value found"| C["Use per-exercise<br/>rest value<br/><i>e.g. 120s</i>"]
+
+    B -->|"✗ No column<br/>or empty"| D{"Tier 2:<br/>Section header<br/>mentions rest?"}
+
+    D -->|"✓ Detected"| E["Use header value<br/><i>'Rest 60–90s' → 90s</i><br/>(upper bound)"]
+
+    D -->|"✗ No mention"| F{"Tier 3:<br/>User config<br/>exists?"}
+
+    F -->|"✓ Config set"| G["Use config value<br/><i>~/.garminmd/config.toml<br/>rest_seconds = 90</i>"]
+
+    F -->|"✗ No config"| H["Tier 4:<br/>Default 90s"]
+
+    C --> I["effectiveRestSeconds<br/>set on exercise"]
+    E --> I
+    G --> I
+    H --> I
+
+    I --> J["Insert Garmin rest step<br/>between exercises"]
+
+    style A fill:#f3e8ff,stroke:#7c3aed
+    style C fill:#dcfce7,stroke:#16a34a
+    style E fill:#dcfce7,stroke:#16a34a
+    style G fill:#dcfce7,stroke:#16a34a
+    style H fill:#fef3c7,stroke:#d97706
+    style J fill:#dbeafe,stroke:#2563eb

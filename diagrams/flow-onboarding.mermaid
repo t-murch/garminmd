@@ -1,0 +1,37 @@
+flowchart TD
+    A["User visits GarminMD"] --> B["Step 1: Connect Notion"]
+    B --> C["Redirect to Notion OAuth"]
+    C --> D["User selects pages to share<br/><i>'Health is Wealth'</i>"]
+    D --> E["OAuth callback → store token"]
+    E --> F["Parse shared pages"]
+    F --> G{"Exercise tables<br/>found?"}
+    
+    G -->|"✓ Yes"| H["'Found 4 sessions in<br/>Health is Wealth'"]
+    G -->|"✗ No"| I["'No workout tables detected.<br/>Check format guide.'"]
+    I --> B
+
+    H --> J["Step 2: Connect Garmin"]
+    J --> K["User enters Garmin<br/>email + password"]
+    K --> L["Authenticate via<br/>@flow-js/garmin-connect"]
+    L --> M{"Auth<br/>success?"}
+    
+    M -->|"✓ Yes"| N["'Connected as user@email.com'"]
+    M -->|"✗ No"| O["'Invalid credentials.<br/>Check email/password.'"]
+    O --> K
+
+    N --> P["Step 3: Push to Garmin"]
+    P --> Q["Preview workouts:<br/>Push, Pull, Shoulders, Legs"]
+    Q --> R["User clicks 'Sync All'"]
+    R --> S["Resolve exercises → build JSON → upload"]
+    S --> T["'4 workouts uploaded ✓<br/>Sync your watch to see them.'"]
+
+    T --> U["Step 4: Dashboard"]
+    U --> V["Show upcoming workouts<br/>'We'll notify you with insights<br/>after each workout.'"]
+
+    style A fill:#f3e8ff,stroke:#7c3aed
+    style H fill:#dcfce7,stroke:#16a34a
+    style N fill:#dcfce7,stroke:#16a34a
+    style T fill:#dcfce7,stroke:#16a34a
+    style V fill:#dbeafe,stroke:#2563eb
+    style I fill:#fef2f2,stroke:#dc2626
+    style O fill:#fef2f2,stroke:#dc2626

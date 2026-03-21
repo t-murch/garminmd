@@ -1,0 +1,43 @@
+sequenceDiagram
+    actor User
+    participant Notion
+    participant GarminMD as GarminMD<br/>(Web App)
+    participant Garmin as Garmin<br/>Connect
+    participant Watch as Garmin<br/>Watch
+    participant LLM as Claude<br/>(LLM)
+
+    Note over User,LLM: PHASE 1 — PLAN
+
+    User->>Notion: Write/update workout tables
+    User->>GarminMD: Click "Sync to Garmin"
+    GarminMD->>Notion: Fetch page content (OAuth)
+    Notion-->>GarminMD: Markdown tables
+    GarminMD->>GarminMD: Parse markdown → exercises
+    GarminMD->>LLM: Resolve unknown exercise names
+    LLM-->>GarminMD: Garmin exercise type IDs
+    GarminMD->>GarminMD: Build workout JSON
+    GarminMD->>Garmin: Push workout (createWorkout)
+    Garmin-->>GarminMD: workoutId confirmed
+    GarminMD-->>User: "4 workouts uploaded ✓"
+    User->>Watch: Sync watch
+    Garmin->>Watch: Workouts downloaded
+
+    Note over User,LLM: PHASE 2 — TRAIN
+
+    User->>Watch: Start workout
+    Watch->>Watch: Guide exercises, count reps
+    User->>Watch: Complete workout
+    Watch->>Garmin: Auto-sync activity
+
+    Note over User,LLM: PHASE 3 — REVIEW
+
+    User->>GarminMD: Taps "Sync from Garmin"
+    GarminMD->>Garmin: getActivities()
+    Garmin-->>GarminMD: New activity detected
+    GarminMD->>Garmin: getActivityDetails()
+    Garmin-->>GarminMD: Actual sets, reps, weight, duration
+    GarminMD->>GarminMD: Match activity → Notion plan
+    GarminMD->>LLM: Compare plan vs actual
+    LLM-->>GarminMD: Coaching insight
+    GarminMD->>GarminMD: Save insight to DB
+    GarminMD-->>User: Dashboard: insight + stats

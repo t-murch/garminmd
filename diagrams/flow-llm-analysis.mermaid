@@ -1,0 +1,37 @@
+flowchart TD
+    A["New Garmin activity detected<br/>(manual 'Sync from Garmin' button<br/>or background poll every 2–4hrs)"] --> B["Pull activity details<br/>getActivityDetails()"]
+    B --> C["Extract: exercise names,<br/>sets, reps, weight, duration, HR"]
+
+    C --> D{"Match to<br/>Notion plan?"}
+    D -->|"By name + date"| E["Load matching plan from DB<br/><i>garmin_workouts table</i>"]
+    D -->|"No match found"| F["Store as unmatched activity<br/>Show on dashboard without insight"]
+
+    E --> G["Build comparison payload"]
+    G --> H["For each exercise:<br/>planned reps/weight vs actual"]
+
+    H --> I["Auto-Insight<br/>(triggered immediately)"]
+
+    I --> J["LLM Call — Claude Sonnet"]
+    J --> K["Context window:<br/>• Plan (Notion): exercises, targets, progression rules<br/>• Actual (Garmin): sets, reps, weight, duration<br/>• History: last 4 weeks plan vs actual<br/>• Phase info: current phase, rep targets"]
+
+    K --> L["LLM generates coaching insight:<br/>• Rep completion rate<br/>• Weight progression signals<br/>• Streak updates<br/>• Encouragement"]
+
+    L --> M["Save insight to DB<br/><i>insights table, type='auto'</i>"]
+    M --> N["Display on dashboard<br/>+ notification badge"]
+
+    N --> O{"User clicks<br/>'Full Analysis'?"}
+    O -->|"Yes"| P["Deep Analysis<br/>(on demand)"]
+    O -->|"No"| Q["Done"]
+
+    P --> R["LLM Call — larger context"]
+    R --> S["Additional context:<br/>• Full phase history (all weeks)<br/>• Cross-session patterns<br/>• Muscle group volume totals<br/>• Recovery day correlations"]
+    S --> T["LLM generates deep insight:<br/>• Phase-level progression<br/>• Muscle balance analysis<br/>• Recovery pattern detection<br/>• Program modification suggestions"]
+    T --> U["Save insight to DB<br/><i>type='deep'</i>"]
+    U --> V["Display full analysis view"]
+
+    style A fill:#f3e8ff,stroke:#7c3aed
+    style I fill:#dbeafe,stroke:#2563eb
+    style P fill:#fef3c7,stroke:#d97706
+    style N fill:#dcfce7,stroke:#16a34a
+    style V fill:#dcfce7,stroke:#16a34a
+    style F fill:#fef2f2,stroke:#dc2626

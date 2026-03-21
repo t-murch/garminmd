@@ -1,0 +1,82 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { requireAuth } from "@/lib/auth/session";
+import { upsertGarminConnection } from "@/lib/db/queries";
+import {
+  createGarminClient,
+  GarminAuthError,
+  GarminServiceError,
+} from "@/lib/garmin/client";
+import { encrypt } from "@/lib/utils/crypto";
+
+const bodySchema = z.object({
+  email: z.string().email("A valid email address is required."),
+  password: z.string().min(1, "Password is required."),
+});
+
+/**
+ * POST /api/garmin/auth
+ *
+ * Authenticates with Garmin Connect using the provided credentials,
+ * then stores the encrypted email and session tokens in the database.
+ *
+ * Requires an active session (user must be logged in via Notion first).
+ */
+export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const { session } = auth;
+
+  // Validate request body
+  const body = await request.json().catch(() => null);
+  const parsed = bodySchema.safeParse(body);
+  if (!parsed.success) {
+    const firstError = parsed.error.issues[0]?.message ?? "Invalid input.";
+    return NextResponse.json({ error: firstError }, { status: 400 });
+  }
+
+  const { email, password } = parsed.data;
+
+  // Attempt Garmin login
+  let garminClient: Awaited<ReturnType<typeof createGarminClient>>;
+  try {
+    garminClient = await createGarminClient(email, password);
+  } catch (err) {
+    if (err instanceof GarminAuthError) {
+      console.error("[garmin/auth] Auth error:", err.message);
+      return NextResponse.json(
+        { error: "Invalid Garmin credentials. Check your email and password." },
+        { status: 401 },
+      );
+    }
+    if (err instanceof GarminServiceError) {
+      console.error("[garmin/auth] Service error:", err.message);
+      return NextResponse.json(
+        {
+          error: "Garmin service is temporarily unavailable. Try again later.",
+        },
+        { status: 502 },
+      );
+    }
+    return NextResponse.json(
+      { error: "Failed to connect to Garmin. Try again later." },
+      { status: 500 },
+    );
+  }
+
+  // Persist encrypted credentials and session tokens
+  const encryptedEmail = encrypt(email);
+  const sessionTokens = garminClient.getSessionTokens();
+  const encryptedSession = encrypt(JSON.stringify(sessionTokens));
+
+  await upsertGarminConnection(
+    session.userId,
+    encryptedEmail,
+    encryptedSession,
+  );
+
+  return NextResponse.json({ success: true });
+}
+
+// TODO: Add rate limiting to this endpoint (e.g., 5 attempts per 15 min per user)
+// to prevent credential-testing abuse and Garmin account lockouts.
