@@ -1,7 +1,7 @@
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
-import type { Root, Table, TableRow, Heading, Text } from "mdast";
+import type { Root, Table, TableRow, Heading, Text, Nodes } from "mdast";
 import { ParsedWorkout, ParsedExercise } from "../core/types";
 import { detectRepsFromHeader, detectRestFromHeader } from "./rest-detector";
 
@@ -367,9 +367,9 @@ function detectSportType(heading: string): ParsedWorkout["sportTypeHint"] {
 }
 
 /** Walk an mdast node tree and extract all text content */
-function extractTextFromNode(node: any): string {
+function extractTextFromNode(node: Nodes): string {
   if (node.type === "text") return (node as Text).value;
-  if (node.children) return node.children.map(extractTextFromNode).join("");
+  if ("children" in node) return (node.children as Nodes[]).map(extractTextFromNode).join("");
   return "";
 }
 
