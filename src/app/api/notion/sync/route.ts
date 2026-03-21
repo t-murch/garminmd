@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
+import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/session";
 import { getUserById, upsertNotionPage } from "@/lib/db/queries";
-import { decrypt } from "@/lib/utils/crypto";
 import { getPageAsMarkdown, getSharedPages } from "@/lib/notion/reader";
 import { parseMarkdown } from "@/lib/parser/markdown";
+import { decrypt } from "@/lib/utils/crypto";
 
 export async function POST(request: Request) {
   const auth = await requireAuth();
@@ -14,10 +14,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const pageId = body?.pageId;
   if (!pageId || typeof pageId !== "string") {
-    return NextResponse.json(
-      { error: "pageId is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "pageId is required" }, { status: 400 });
   }
 
   const user = await getUserById(session.userId);
@@ -36,12 +33,15 @@ export async function POST(request: Request) {
   }
 
   // Verify the user's Notion token has access to this page
-  let sharedPages;
+  let sharedPages: Awaited<ReturnType<typeof getSharedPages>>;
   try {
     sharedPages = await getSharedPages(accessToken);
   } catch {
     return NextResponse.json(
-      { error: "Failed to verify page access. Your Notion token may have expired." },
+      {
+        error:
+          "Failed to verify page access. Your Notion token may have expired.",
+      },
       { status: 502 },
     );
   }
@@ -62,7 +62,9 @@ export async function POST(request: Request) {
     markdown = await getPageAsMarkdown(accessToken, pageId);
   } catch {
     return NextResponse.json(
-      { error: "Failed to read page from Notion. Your token may have expired." },
+      {
+        error: "Failed to read page from Notion. Your token may have expired.",
+      },
       { status: 502 },
     );
   }

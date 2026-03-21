@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/session";
-import { encrypt } from "@/lib/utils/crypto";
 import { upsertGarminConnection } from "@/lib/db/queries";
 import {
   createGarminClient,
   GarminAuthError,
   GarminServiceError,
 } from "@/lib/garmin/client";
+import { encrypt } from "@/lib/utils/crypto";
 
 const bodySchema = z.object({
   email: z.string().email("A valid email address is required."),
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   const { email, password } = parsed.data;
 
   // Attempt Garmin login
-  let garminClient;
+  let garminClient: Awaited<ReturnType<typeof createGarminClient>>;
   try {
     garminClient = await createGarminClient(email, password);
   } catch (err) {
@@ -52,7 +52,9 @@ export async function POST(request: Request) {
     if (err instanceof GarminServiceError) {
       console.error("[garmin/auth] Service error:", err.message);
       return NextResponse.json(
-        { error: "Garmin service is temporarily unavailable. Try again later." },
+        {
+          error: "Garmin service is temporarily unavailable. Try again later.",
+        },
         { status: 502 },
       );
     }

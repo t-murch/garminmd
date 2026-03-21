@@ -41,7 +41,10 @@ export function normalizeName(raw: string): string {
       if (!expansion) return word;
       // If expansion is multi-word and the next word already matches, skip expansion
       const expansionWords = expansion.split(" ");
-      if (expansionWords.length > 1 && words[i + 1] === expansionWords[expansionWords.length - 1]) {
+      if (
+        expansionWords.length > 1 &&
+        words[i + 1] === expansionWords[expansionWords.length - 1]
+      ) {
         return word;
       }
       return expansion;
@@ -102,5 +105,5 @@ export function loadDictionary(): Map<string, GarminExerciseType> {
  */
 export function getDictionaryEntries(): ExerciseDictionaryEntry[] {
   if (!entries) loadDictionary();
-  return entries!;
+  return entries ?? [];
 }

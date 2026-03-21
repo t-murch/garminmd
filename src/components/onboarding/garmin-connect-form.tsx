@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ErrorBanner } from "@/components/ui/error-banner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { ErrorBanner } from "@/components/ui/error-banner";
 
 interface GarminConnectFormProps {
   connected: boolean;
@@ -68,11 +68,13 @@ export function GarminConnectForm({
             strokeLinejoin="round"
             className="text-primary"
           >
+            <title>Connected</title>
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
         <p className="text-sm text-muted-foreground">
-          Connected as <span className="font-medium text-foreground">{connectedEmail}</span>
+          Connected as{" "}
+          <span className="font-medium text-foreground">{connectedEmail}</span>
         </p>
       </div>
     );
@@ -81,8 +83,8 @@ export function GarminConnectForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <p className="text-sm text-muted-foreground">
-        GarminMD uses the same authentication method as the Garmin Connect mobile
-        app. Your credentials are encrypted and stored securely.
+        GarminMD uses the same authentication method as the Garmin Connect
+        mobile app. Your credentials are encrypted and stored securely.
       </p>
 
       {error && <ErrorBanner>{error}</ErrorBanner>}

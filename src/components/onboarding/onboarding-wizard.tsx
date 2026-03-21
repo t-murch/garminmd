@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,12 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { PageSelector } from "./page-selector";
-import { GarminConnectForm } from "./garmin-connect-form";
-import { WorkoutPreview } from "./workout-preview";
 import type { ParsedWorkout } from "@/lib/core/types";
+import { GarminConnectForm } from "./garmin-connect-form";
+import { PageSelector } from "./page-selector";
+import { WorkoutPreview } from "./workout-preview";
 
 const STEPS = [
   { label: "Select Page", number: 1 },
@@ -70,11 +70,7 @@ export function OnboardingWizard() {
               }
               className="h-6 min-w-6 justify-center"
             >
-              {currentStep > step.number ? (
-                <CheckIcon />
-              ) : (
-                step.number
-              )}
+              {currentStep > step.number ? <CheckIcon /> : step.number}
             </Badge>
             <span
               className={`text-sm ${
@@ -140,10 +136,7 @@ export function OnboardingWizard() {
                 GarminMD will analyze your performance after each workout and
                 deliver coaching insights on your dashboard.
               </p>
-              <a
-                href="/dashboard"
-                className={buttonVariants({ size: "lg" })}
-              >
+              <a href="/dashboard" className={buttonVariants({ size: "lg" })}>
                 Go to Dashboard
               </a>
             </div>
@@ -186,6 +179,7 @@ function CheckIcon() {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
+      <title>Completed</title>
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
@@ -205,6 +199,7 @@ function CheckCircleIcon() {
       strokeLinejoin="round"
       className="text-primary"
     >
+      <title>Success</title>
       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
       <polyline points="22 4 12 14.01 9 11.01" />
     </svg>

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/session";
 import { getUserById } from "@/lib/db/queries";
-import { decrypt } from "@/lib/utils/crypto";
 import { getSharedPages } from "@/lib/notion/reader";
+import { decrypt } from "@/lib/utils/crypto";
 
 export async function GET() {
   const auth = await requireAuth();
@@ -24,12 +24,15 @@ export async function GET() {
     );
   }
 
-  let pages;
+  let pages: Awaited<ReturnType<typeof getSharedPages>>;
   try {
     pages = await getSharedPages(accessToken);
   } catch {
     return NextResponse.json(
-      { error: "Failed to fetch pages from Notion. Your token may have expired." },
+      {
+        error:
+          "Failed to fetch pages from Notion. Your token may have expired.",
+      },
       { status: 502 },
     );
   }

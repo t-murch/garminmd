@@ -1,7 +1,9 @@
+import type { IGarminTokens } from "@flow-js/garmin-connect";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { StrengthAdapter } from "@/lib/adapters/strength";
 import { requireAuth } from "@/lib/auth/session";
-import { decrypt, encrypt } from "@/lib/utils/crypto";
+import type { GarminWorkoutPayload, ResolvedWorkout } from "@/lib/core/types";
 import {
   getGarminConnection,
   getNotionPages,
@@ -12,13 +14,8 @@ import {
   GarminAuthError,
   GarminServiceError,
 } from "@/lib/garmin/client";
-import { syncWorkoutsToGarmin, type SyncResult } from "@/lib/garmin/sync";
-import { StrengthAdapter } from "@/lib/adapters/strength";
-import type {
-  GarminWorkoutPayload,
-  ResolvedWorkout,
-} from "@/lib/core/types";
-import type { IGarminTokens } from "@flow-js/garmin-connect";
+import { type SyncResult, syncWorkoutsToGarmin } from "@/lib/garmin/sync";
+import { decrypt, encrypt } from "@/lib/utils/crypto";
 
 const bodySchema = z.object({
   pageId: z.string().min(1, "Page ID is required."),
@@ -85,7 +82,7 @@ export async function POST(request: Request) {
   }
 
   // Create authenticated Garmin client
-  let garminClient;
+  let garminClient: Awaited<ReturnType<typeof createGarminClient>>;
   try {
     // Password is not stored (only email + session tokens).
     // If tokens are expired, this will fail and user needs to re-auth.
@@ -95,14 +92,19 @@ export async function POST(request: Request) {
     if (err instanceof GarminAuthError) {
       console.error("[garmin/push] Auth error:", err.message);
       return NextResponse.json(
-        { error: "Garmin authentication failed. Please reconnect your account in Settings." },
+        {
+          error:
+            "Garmin authentication failed. Please reconnect your account in Settings.",
+        },
         { status: 401 },
       );
     }
     if (err instanceof GarminServiceError) {
       console.error("[garmin/push] Service error:", err.message);
       return NextResponse.json(
-        { error: "Garmin service is temporarily unavailable. Try again later." },
+        {
+          error: "Garmin service is temporarily unavailable. Try again later.",
+        },
         { status: 502 },
       );
     }
@@ -135,8 +137,7 @@ export async function POST(request: Request) {
   if (resolvedWorkouts.length === 0) {
     return NextResponse.json(
       {
-        error:
-          "No workouts found for this page. Sync from Notion first.",
+        error: "No workouts found for this page. Sync from Notion first.",
       },
       { status: 400 },
     );
@@ -176,9 +177,16 @@ export async function POST(request: Request) {
   // Sync to Garmin
   let results: SyncResult[];
   try {
-    results = await syncWorkoutsToGarmin(session.userId, payloads, garminClient);
+    results = await syncWorkoutsToGarmin(
+      session.userId,
+      payloads,
+      garminClient,
+    );
   } catch (err) {
-    console.error("[garmin/push] Sync failed:", err instanceof Error ? err.message : err);
+    console.error(
+      "[garmin/push] Sync failed:",
+      err instanceof Error ? err.message : err,
+    );
     return NextResponse.json(
       { error: "Failed to sync workouts to Garmin. Try again later." },
       { status: 502 },

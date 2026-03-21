@@ -15,16 +15,16 @@ export function exactMatch(rawName: string): GarminExerciseType | null {
   const normalized = normalizeName(rawName);
 
   // Direct match
-  if (dict.has(normalized)) {
-    return dict.get(normalized)!;
-  }
+  const direct = dict.get(normalized);
+  if (direct) return direct;
 
   // Try stripping common prefixes that might not be in the dictionary
   // e.g. "Cable Pec Flies" → normalize → "cable pec fly" → match "cable pec fly"
   // Already handled by normalizeName, but let's also try without trailing "s"
   const withoutTrailingS = normalized.replace(/s$/, "");
-  if (withoutTrailingS !== normalized && dict.has(withoutTrailingS)) {
-    return dict.get(withoutTrailingS)!;
+  if (withoutTrailingS !== normalized) {
+    const singular = dict.get(withoutTrailingS);
+    if (singular) return singular;
   }
 
   return null;

@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
-import { exchangeCodeForToken } from "@/lib/notion/oauth";
-import { encrypt } from "@/lib/utils/crypto";
+import { getServerSession } from "@/lib/auth/session";
 import {
-  getUserByNotionId,
   createUser,
+  getUserByNotionId,
   updateUserToken,
 } from "@/lib/db/queries";
-import { getServerSession } from "@/lib/auth/session";
+import {
+  exchangeCodeForToken,
+  type NotionTokenResponse,
+} from "@/lib/notion/oauth";
+import { encrypt } from "@/lib/utils/crypto";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -26,7 +29,7 @@ export async function GET(request: Request) {
   session.oauthState = undefined;
   await session.save();
 
-  let tokenResponse;
+  let tokenResponse: NotionTokenResponse;
   try {
     tokenResponse = await exchangeCodeForToken(code);
   } catch {

@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ParsedWorkout } from "@/lib/core/types";
 
 interface WorkoutPreviewProps {
@@ -18,17 +13,15 @@ export function WorkoutPreview({ workouts }: WorkoutPreviewProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-2">
-        {workouts.map((workout, i) => (
-          <Card key={i} size="sm">
+        {workouts.map((workout) => (
+          <Card key={`${workout.name}-${workout.dayOfWeek ?? ""}`} size="sm">
             <CardHeader className="flex-row items-center justify-between">
               <CardTitle className="text-sm">{workout.name}</CardTitle>
               <Badge variant="outline">Preview</Badge>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                {workout.dayOfWeek && (
-                  <span>{workout.dayOfWeek}</span>
-                )}
+                {workout.dayOfWeek && <span>{workout.dayOfWeek}</span>}
                 <span>
                   {workout.exercises.length} exercise
                   {workout.exercises.length !== 1 ? "s" : ""}

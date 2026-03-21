@@ -1,8 +1,8 @@
-import { unified } from "unified";
-import remarkParse from "remark-parse";
+import type { Heading, Nodes, Root, Table, Text } from "mdast";
 import remarkGfm from "remark-gfm";
-import type { Root, Table, TableRow, Heading, Text, Nodes } from "mdast";
-import { ParsedWorkout, ParsedExercise } from "../core/types";
+import remarkParse from "remark-parse";
+import { unified } from "unified";
+import type { ParsedExercise, ParsedWorkout } from "../core/types";
 import { detectRepsFromHeader, detectRestFromHeader } from "./rest-detector";
 
 /**
@@ -131,19 +131,19 @@ function buildColumnMap(headers: string[]): ColumnMap | null {
   const weekColumns = new Map<number, number>();
   for (let i = 0; i < headers.length; i++) {
     const wkMatch = headers[i].match(/^wk\s*(\d+)$/i);
-    if (wkMatch) weekColumns.set(parseInt(wkMatch[1]), i);
+    if (wkMatch) weekColumns.set(parseInt(wkMatch[1], 10), i);
   }
 
   return {
     exercise: exerciseIdx,
     sets: setsIdx,
     reps: lower.findIndex((h) => h === "reps" || h === "rep"),
-    weight: lower.findIndex((h) => h === "weight"),
+    weight: lower.indexOf("weight"),
     startWeight: lower.findIndex(
       (h) =>
         h === "start weight" || h === "start wt" || h === "starting weight",
     ),
-    rest: lower.findIndex((h) => h === "rest"),
+    rest: lower.indexOf("rest"),
     order: lower.findIndex((h) => h === "#" || h === "order" || h === "no"),
     notes: lower.findIndex((h) => h === "notes" || h === "note"),
     weekColumns,
@@ -221,9 +221,12 @@ function resolveWeight(
   weeklyData: Record<number, string | null>,
 ): WeightValue | null {
   // 1. If a target week is specified and that column has data, parse weight from it
-  if (targetWeek !== null && weeklyData[targetWeek]) {
-    const parsed = parseWeightFromWeekCell(weeklyData[targetWeek]!);
-    if (parsed) return parsed;
+  if (targetWeek !== null) {
+    const weekCell = weeklyData[targetWeek];
+    if (weekCell) {
+      const parsed = parseWeightFromWeekCell(weekCell);
+      if (parsed) return parsed;
+    }
   }
 
   // 2. Start Weight column
@@ -252,7 +255,7 @@ function resolveWeight(
  * The first number might be a weight if it deviates from the Start Weight.
  * For now, we don't extract weight from week cells — use Start Weight.
  */
-function parseWeightFromWeekCell(cell: string): WeightValue | null {
+function parseWeightFromWeekCell(_cell: string): WeightValue | null {
   // Week cells like "10 x 12 x 12" are rep logs, not weights.
   // Cells like "30-10, 12, 12" mean "30 lbs, 10 reps, 12 reps, 12 reps"
   // This is complex and user-specific notation — defer to Start Weight.
@@ -265,7 +268,7 @@ function parseWeightString(s: string): WeightValue | null {
   const match = s.match(/^([\d.]+)\s*(lbs?|kg)?/i);
   if (!match) return null;
   const value = parseFloat(match[1]);
-  if (isNaN(value)) return null;
+  if (Number.isNaN(value)) return null;
   const unit = match[2]?.toLowerCase().startsWith("k") ? "kg" : "lbs";
   return { value, unit: unit as "lbs" | "kg" };
 }
@@ -317,13 +320,13 @@ function extractWeeklyData(
 function parseRestValue(s: string | undefined): number | null {
   if (!s) return null;
   const match = s.match(/(\d+)\s*s?/i);
-  return match ? parseInt(match[1]) : null;
+  return match ? parseInt(match[1], 10) : null;
 }
 
 function parseIntSafe(s: string | undefined): number | null {
   if (!s) return null;
-  const n = parseInt(s);
-  return isNaN(n) ? null : n;
+  const n = parseInt(s, 10);
+  return Number.isNaN(n) ? null : n;
 }
 
 function cleanWorkoutName(heading: string): string {
@@ -361,15 +364,15 @@ function detectSportType(heading: string): ParsedWorkout["sportTypeHint"] {
   const lower = heading.toLowerCase();
   if (/\b(running|run)\b/.test(lower) || /\btempo\b/.test(lower))
     return "running";
-  if (/\b(cycling|bike|ride)\b/.test(lower))
-    return "cycling";
+  if (/\b(cycling|bike|ride)\b/.test(lower)) return "cycling";
   return "strength";
 }
 
 /** Walk an mdast node tree and extract all text content */
 function extractTextFromNode(node: Nodes): string {
   if (node.type === "text") return (node as Text).value;
-  if ("children" in node) return (node.children as Nodes[]).map(extractTextFromNode).join("");
+  if ("children" in node)
+    return (node.children as Nodes[]).map(extractTextFromNode).join("");
   return "";
 }
 
