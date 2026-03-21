@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { encrypt, decrypt, generateEncryptionKey } from "@/lib/utils/crypto";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { decrypt, encrypt, generateEncryptionKey } from "@/lib/utils/crypto";
 
 describe("crypto", () => {
   const testKey = "a".repeat(64); // 32 bytes of 0xaa
@@ -43,7 +43,10 @@ describe("crypto", () => {
   it("throws on tampered ciphertext", () => {
     const encrypted = encrypt("test");
     const parts = encrypted.split(":");
-    parts[2] = "ff" + parts[2].slice(2); // tamper with ciphertext
+    const ciphertextHex = parts[2] ?? "";
+    const firstByte = parseInt(ciphertextHex.slice(0, 2) || "00", 16);
+    const tamperedByte = (firstByte ^ 0x01).toString(16).padStart(2, "0");
+    parts[2] = `${tamperedByte}${ciphertextHex.slice(2)}`;
     expect(() => decrypt(parts.join(":"))).toThrow();
   });
 
