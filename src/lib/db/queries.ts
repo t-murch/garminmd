@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getDb, type AppDatabase } from "./index";
 import {
   users,
@@ -71,28 +71,20 @@ export async function upsertGarminConnection(
   encryptedSession: string | null,
   db: AppDatabase = getDb(),
 ) {
-  const existing = await db.query.garminConnections.findFirst({
-    where: eq(garminConnections.userId, userId),
-  });
-
-  if (existing) {
-    await db
-      .update(garminConnections)
-      .set({
-        garminEmail: encryptedEmail,
-        garminSession: encryptedSession,
-        lastSyncAt: Date.now(),
-      })
-      .where(eq(garminConnections.id, existing.id));
-    return { id: existing.id };
-  }
-
   const [row] = await db
     .insert(garminConnections)
     .values({
       userId,
       garminEmail: encryptedEmail,
       garminSession: encryptedSession,
+    })
+    .onConflictDoUpdate({
+      target: garminConnections.userId,
+      set: {
+        garminEmail: encryptedEmail,
+        garminSession: encryptedSession,
+        lastSyncAt: Date.now(),
+      },
     })
     .returning({ id: garminConnections.id });
   return { id: row.id };
@@ -116,25 +108,6 @@ export async function upsertNotionPage(
   contentHash: string,
   db: AppDatabase = getDb(),
 ) {
-  const existing = await db.query.notionPages.findFirst({
-    where: and(
-      eq(notionPages.userId, userId),
-      eq(notionPages.notionPageId, notionPageId),
-    ),
-  });
-
-  if (existing) {
-    await db
-      .update(notionPages)
-      .set({
-        pageTitle: title,
-        contentHash,
-        lastParsedAt: Date.now(),
-      })
-      .where(eq(notionPages.id, existing.id));
-    return { id: existing.id };
-  }
-
   const [row] = await db
     .insert(notionPages)
     .values({
@@ -143,6 +116,14 @@ export async function upsertNotionPage(
       pageTitle: title,
       contentHash,
       lastParsedAt: Date.now(),
+    })
+    .onConflictDoUpdate({
+      target: [notionPages.userId, notionPages.notionPageId],
+      set: {
+        pageTitle: title,
+        contentHash,
+        lastParsedAt: Date.now(),
+      },
     })
     .returning({ id: notionPages.id });
   return { id: row.id };
@@ -166,25 +147,6 @@ export async function upsertGarminWorkout(
   payloadHash: string,
   db: AppDatabase = getDb(),
 ) {
-  const existing = await db.query.garminWorkouts.findFirst({
-    where: and(
-      eq(garminWorkouts.userId, userId),
-      eq(garminWorkouts.workoutName, workoutName),
-    ),
-  });
-
-  if (existing) {
-    await db
-      .update(garminWorkouts)
-      .set({
-        garminWorkoutId,
-        payloadHash,
-        lastPushedAt: Date.now(),
-      })
-      .where(eq(garminWorkouts.id, existing.id));
-    return { id: existing.id };
-  }
-
   const [row] = await db
     .insert(garminWorkouts)
     .values({
@@ -193,6 +155,14 @@ export async function upsertGarminWorkout(
       garminWorkoutId,
       payloadHash,
       lastPushedAt: Date.now(),
+    })
+    .onConflictDoUpdate({
+      target: [garminWorkouts.userId, garminWorkouts.workoutName],
+      set: {
+        garminWorkoutId,
+        payloadHash,
+        lastPushedAt: Date.now(),
+      },
     })
     .returning({ id: garminWorkouts.id });
   return { id: row.id };
