@@ -1,11 +1,16 @@
 import type {
+  GarminRepeatGroup,
+  GarminWorkoutPayload,
+  GarminWorkoutStep,
+  GarminWorkoutStepOrGroup,
+} from "@/lib/core/types";
+import type {
   IGarminTokens,
   IWorkout,
   IWorkoutDetail,
   IWorkoutSegment,
   IWorkoutStep,
 } from "@flow-js/garmin-connect";
-import type { GarminWorkoutPayload, GarminWorkoutStep } from "@/lib/core/types";
 
 // ─── Public Types ──────────────────────────────────────────────
 

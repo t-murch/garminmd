@@ -294,9 +294,9 @@ describe("database schema and queries", () => {
 
     it("cascade deletes child records when user is deleted", async () => {
       const { id: userId } = await createUser("notion-cascade", "token", db);
-      await upsertGarminConnection(userId, "email", "session", db);
+      await upsertGarminConnection(userId, "email", "session", undefined, db);
       await upsertNotionPage(userId, "page-1", "Title", "hash", db);
-      await upsertGarminWorkout(userId, "Push Day", null, "hash", db);
+      await upsertGarminWorkout(userId, "Push Day", null, "hash", "notion-page-1", undefined, db);
 
       // Verify children exist
       expect(await getGarminConnection(userId, db)).toBeDefined();
