@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GarminMD
 
-## Getting Started
+Plan in Notion. Train with Garmin. Get coached by AI.
 
-First, run the development server:
+GarminMD is a self-hostable web app that:
+- Authenticates users via **Notion OAuth**
+- Reads a Notion training plan page and parses workouts from markdown tables
+- Connects to **Garmin Connect** (via `@flow-js/garmin-connect`) to push workouts
+- Stores tokens **encrypted** in SQLite
+
+## Requirements
+
+- Node.js **20+**
+- `pnpm`
+
+## Quickstart (local)
+
+1) Install dependencies
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2) Configure environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Fill in `.env.local`:
+- `NOTION_CLIENT_ID`, `NOTION_CLIENT_SECRET`
+- `NOTION_REDIRECT_URI` (must match your Notion integration settings)
+- `NEXTAUTH_SECRET` (used by `iron-session`; **must be at least 32 characters**)
+- `ENCRYPTION_KEY` (**64 hex chars**, 32 bytes) used to encrypt stored tokens
+- `DATABASE_URL` (defaults to `file:./garminmd.db`)
+- Optional: `ANTHROPIC_API_KEY` (only needed for LLM-backed resolution/analysis paths)
 
-## Learn More
+Generate an `ENCRYPTION_KEY`:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3) Run migrations
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm db:migrate
+```
 
-## Deploy on Vercel
+4) Start the dev server
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Open `http://localhost:3000`.
+
+## Scripts
+
+- `pnpm dev` – run locally
+- `pnpm build` / `pnpm start` – production build + start
+- `pnpm test` – run unit tests (Vitest)
+- `pnpm lint` – Biome checks (format + lint + import organization)
+- `pnpm db:generate` – generate Drizzle migrations
+- `pnpm db:migrate` – apply Drizzle migrations to `DATABASE_URL`
+
+## Notes / security
+
+- Notion access tokens and Garmin session tokens are stored encrypted (AES-256-GCM) using `ENCRYPTION_KEY`.
+- Garmin Connect does not provide a public consumer OAuth flow; GarminMD uses the same login flow as the mobile app to obtain session tokens. Passwords are not stored.
+
+## Project docs
+
+- `garmin-md-spec.md` – product/architecture spec
+- `CLAUDE.md` – engineering notes and conventions
