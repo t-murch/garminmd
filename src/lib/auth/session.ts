@@ -1,5 +1,6 @@
 import { getIronSession, type IronSession, type SessionOptions } from "iron-session";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 export interface SessionData {
   userId: string;
@@ -7,6 +8,16 @@ export interface SessionData {
   /** Transient: OAuth CSRF state token, cleared after callback validation */
   oauthState?: string;
 }
+
+export type AuthenticatedSession = IronSession<SessionData> & {
+  isLoggedIn: true;
+  userId: string;
+  notionUserId: string;
+};
+
+type AuthResult =
+  | { session: AuthenticatedSession; error?: never }
+  | { session?: never; error: NextResponse };
 
 function getSessionOptions(): SessionOptions {
   const secret = process.env.NEXTAUTH_SECRET;
@@ -35,12 +46,18 @@ export async function getServerSession(): Promise<
   });
 }
 
-/** For Route Handlers — reads session from request/response pair */
-export async function getRouteSession(
-  req: Request,
-  res: Response,
-): Promise<IronSession<SessionData>> {
-  return getIronSession<SessionData>(req, res, getSessionOptions());
+/** Validates session and returns authenticated session or 401 response */
+export async function requireAuth(): Promise<AuthResult> {
+  const session = await getServerSession();
+  if (!session.isLoggedIn) {
+    return {
+      error: NextResponse.json(
+        { error: "You must be logged in." },
+        { status: 401 },
+      ),
+    };
+  }
+  return { session: session as AuthenticatedSession };
 }
 
 /** Destroy session (for logout) — clears cookie data */

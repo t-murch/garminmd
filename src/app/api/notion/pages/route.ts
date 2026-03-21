@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "@/lib/auth/session";
+import { requireAuth } from "@/lib/auth/session";
 import { getUserById } from "@/lib/db/queries";
 import { decrypt } from "@/lib/utils/crypto";
 import { getSharedPages } from "@/lib/notion/reader";
 
 export async function GET() {
-  const session = await getServerSession();
-  if (!session.isLoggedIn) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const { session } = auth;
 
   const user = await getUserById(session.userId);
   if (!user) {

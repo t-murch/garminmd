@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
-import { getServerSession } from "@/lib/auth/session";
+import { requireAuth } from "@/lib/auth/session";
 import { getUserById, upsertNotionPage } from "@/lib/db/queries";
 import { decrypt } from "@/lib/utils/crypto";
 import { getPageAsMarkdown, getSharedPages } from "@/lib/notion/reader";
 import { parseMarkdown } from "@/lib/parser/markdown";
 
 export async function POST(request: Request) {
-  const session = await getServerSession();
-  if (!session.isLoggedIn) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const { session } = auth;
 
   const body = await request.json().catch(() => null);
   const pageId = body?.pageId;

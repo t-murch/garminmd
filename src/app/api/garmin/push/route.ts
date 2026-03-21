@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getServerSession } from "@/lib/auth/session";
+import { requireAuth } from "@/lib/auth/session";
 import { decrypt, encrypt } from "@/lib/utils/crypto";
 import {
   getGarminConnection,
@@ -38,14 +38,9 @@ const bodySchema = z.object({
  *   6. Return sync results
  */
 export async function POST(request: Request) {
-  // Verify the user is logged in
-  const session = await getServerSession();
-  if (!session.isLoggedIn) {
-    return NextResponse.json(
-      { error: "You must be logged in." },
-      { status: 401 },
-    );
-  }
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const { session } = auth;
 
   // Validate request body
   const body = await request.json().catch(() => null);

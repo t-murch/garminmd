@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getServerSession } from "@/lib/auth/session";
+import { requireAuth } from "@/lib/auth/session";
 import { encrypt } from "@/lib/utils/crypto";
 import { upsertGarminConnection } from "@/lib/db/queries";
 import {
@@ -23,14 +23,9 @@ const bodySchema = z.object({
  * Requires an active session (user must be logged in via Notion first).
  */
 export async function POST(request: Request) {
-  // Verify the user is logged in
-  const session = await getServerSession();
-  if (!session.isLoggedIn) {
-    return NextResponse.json(
-      { error: "You must be logged in to connect Garmin." },
-      { status: 401 },
-    );
-  }
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const { session } = auth;
 
   // Validate request body
   const body = await request.json().catch(() => null);
