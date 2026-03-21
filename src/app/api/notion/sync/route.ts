@@ -36,6 +36,27 @@ export async function POST(request: Request) {
     );
   }
 
+  // Verify the user's Notion token has access to this page
+  let sharedPages;
+  try {
+    sharedPages = await getSharedPages(accessToken);
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to verify page access. Your Notion token may have expired." },
+      { status: 502 },
+    );
+  }
+
+  const sharedPage = sharedPages.find((p) => p.id === pageId);
+  if (!sharedPage) {
+    return NextResponse.json(
+      { error: "Page not found or not shared with GarminMD." },
+      { status: 404 },
+    );
+  }
+
+  const title = sharedPage.title || "Untitled";
+
   // Fetch the markdown content from Notion
   let markdown: string;
   try {
@@ -52,16 +73,6 @@ export async function POST(request: Request) {
 
   // Compute a content hash for change detection
   const contentHash = createHash("sha256").update(markdown).digest("hex");
-
-  // Resolve page title — try to find it in the shared pages list
-  let title = "Untitled";
-  try {
-    const pages = await getSharedPages(accessToken);
-    const match = pages.find((p) => p.id === pageId);
-    if (match) title = match.title;
-  } catch {
-    // Title lookup is best-effort; don't fail the sync
-  }
 
   // Upsert the page record
   await upsertNotionPage(session.userId, pageId, title, contentHash);
