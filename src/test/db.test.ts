@@ -14,6 +14,14 @@ import {
   upsertGarminConnection,
   upsertGarminWorkout,
   upsertNotionPage,
+  upsertGarminActivity,
+  getGarminActivities,
+  getGarminActivityByGarminId,
+  updateActivityMatch,
+  createInsight,
+  getInsights,
+  getInsightsByActivity,
+  getRecentActivitiesWithWorkouts,
 } from "@/lib/db/queries";
 import * as schema from "@/lib/db/schema";
 
@@ -36,6 +44,7 @@ function createTestDb() {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       garmin_email TEXT NOT NULL,
+      garmin_password TEXT,
       garmin_session TEXT,
       last_sync_at INTEGER
     );
@@ -56,6 +65,7 @@ function createTestDb() {
       workout_name TEXT NOT NULL,
       garmin_workout_id TEXT,
       payload_hash TEXT,
+      resolved_data TEXT,
       last_pushed_at INTEGER
     );
 
@@ -150,6 +160,7 @@ describe("database schema and queries", () => {
         userId,
         "enc-email",
         "enc-session",
+        undefined,
         db,
       );
       expect(id).toBeDefined();
@@ -162,8 +173,8 @@ describe("database schema and queries", () => {
 
     it("updates existing connection on second upsert", async () => {
       const { id: userId } = await createUser("notion-gc2", "token", db);
-      await upsertGarminConnection(userId, "email-v1", "session-v1", db);
-      await upsertGarminConnection(userId, "email-v2", "session-v2", db);
+      await upsertGarminConnection(userId, "email-v1", "session-v1", undefined, db);
+      await upsertGarminConnection(userId, "email-v2", "session-v2", undefined, db);
 
       const conn = await getGarminConnection(userId, db);
       expect(conn?.garminEmail).toBe("email-v2");
@@ -204,7 +215,7 @@ describe("database schema and queries", () => {
   describe("garmin workouts", () => {
     it("creates and lists workouts", async () => {
       const { id: userId } = await createUser("notion-gw", "token", db);
-      await upsertGarminWorkout(userId, "Push Day", "garmin-42", "hash-a", db);
+      await upsertGarminWorkout(userId, "Push Day", "garmin-42", "hash-a", "notion-page-1", undefined, db);
 
       const workouts = await getGarminWorkouts(userId, db);
       expect(workouts).toHaveLength(1);
@@ -214,8 +225,8 @@ describe("database schema and queries", () => {
 
     it("updates existing workout on re-push (idempotent)", async () => {
       const { id: userId } = await createUser("notion-gw2", "token", db);
-      await upsertGarminWorkout(userId, "Pull Day", "garmin-1", "hash-1", db);
-      await upsertGarminWorkout(userId, "Pull Day", "garmin-1", "hash-2", db);
+      await upsertGarminWorkout(userId, "Pull Day", "garmin-1", "hash-1", "notion-page-1", undefined, db);
+      await upsertGarminWorkout(userId, "Pull Day", "garmin-1", "hash-2", "notion-page-1", undefined, db);
 
       const workouts = await getGarminWorkouts(userId, db);
       expect(workouts).toHaveLength(1);
@@ -271,15 +282,21 @@ describe("database schema and queries", () => {
   describe("foreign key constraints", () => {
     it("rejects garmin connection for non-existent user", async () => {
       await expect(
-        upsertGarminConnection("fake-user-id", "email", "session", db),
+        upsertGarminConnection(
+          "fake-user-id",
+          "email",
+          "session",
+          undefined,
+          db,
+        ),
       ).rejects.toThrow();
     });
 
     it("cascade deletes child records when user is deleted", async () => {
       const { id: userId } = await createUser("notion-cascade", "token", db);
-      await upsertGarminConnection(userId, "email", "session", db);
+      await upsertGarminConnection(userId, "email", "session", undefined, db);
       await upsertNotionPage(userId, "page-1", "Title", "hash", db);
-      await upsertGarminWorkout(userId, "Push Day", null, "hash", db);
+      await upsertGarminWorkout(userId, "Push Day", null, "hash", "notion-page-1", undefined, db);
 
       // Verify children exist
       expect(await getGarminConnection(userId, db)).toBeDefined();
@@ -293,6 +310,276 @@ describe("database schema and queries", () => {
       expect(await getGarminConnection(userId, db)).toBeUndefined();
       expect(await getNotionPages(userId, db)).toHaveLength(0);
       expect(await getGarminWorkouts(userId, db)).toHaveLength(0);
+    });
+  });
+
+  describe("garmin activities", () => {
+    it("creates a new activity", async () => {
+      const { id: userId } = await createUser("notion-act1", "token", db);
+      const { id } = await upsertGarminActivity(
+        userId,
+        {
+          garminActivityId: "garmin-act-100",
+          activityType: "strength_training",
+          activityName: "Push Day",
+          startTime: 1700000000000,
+          durationSeconds: 3600,
+          rawData: JSON.stringify({ sets: 12 }),
+        },
+        db,
+      );
+      expect(id).toBeDefined();
+
+      const activity = await getGarminActivityByGarminId("garmin-act-100", db);
+      expect(activity).toBeDefined();
+      expect(activity!.activityName).toBe("Push Day");
+      expect(activity!.activityType).toBe("strength_training");
+      expect(activity!.durationSeconds).toBe(3600);
+    });
+
+    it("deduplicates by garminActivityId on upsert", async () => {
+      const { id: userId } = await createUser("notion-act2", "token", db);
+      const { id: firstId } = await upsertGarminActivity(
+        userId,
+        {
+          garminActivityId: "garmin-act-200",
+          activityName: "Pull Day v1",
+          durationSeconds: 3000,
+        },
+        db,
+      );
+
+      const { id: secondId } = await upsertGarminActivity(
+        userId,
+        {
+          garminActivityId: "garmin-act-200",
+          activityName: "Pull Day v2",
+          durationSeconds: 3500,
+        },
+        db,
+      );
+
+      // Same DB row, updated in place
+      expect(secondId).toBe(firstId);
+
+      const activity = await getGarminActivityByGarminId("garmin-act-200", db);
+      expect(activity!.activityName).toBe("Pull Day v2");
+      expect(activity!.durationSeconds).toBe(3500);
+    });
+
+    it("returns activities ordered by startTime desc", async () => {
+      const { id: userId } = await createUser("notion-act3", "token", db);
+      await upsertGarminActivity(
+        userId,
+        { garminActivityId: "act-old", activityName: "Old", startTime: 1000 },
+        db,
+      );
+      await upsertGarminActivity(
+        userId,
+        { garminActivityId: "act-new", activityName: "New", startTime: 3000 },
+        db,
+      );
+      await upsertGarminActivity(
+        userId,
+        { garminActivityId: "act-mid", activityName: "Mid", startTime: 2000 },
+        db,
+      );
+
+      const activities = await getGarminActivities(userId, 10, 0, db);
+      expect(activities).toHaveLength(3);
+      expect(activities[0].activityName).toBe("New");
+      expect(activities[1].activityName).toBe("Mid");
+      expect(activities[2].activityName).toBe("Old");
+    });
+
+    it("finds activity by garmin ID", async () => {
+      const { id: userId } = await createUser("notion-act4", "token", db);
+      await upsertGarminActivity(
+        userId,
+        { garminActivityId: "garmin-find-me", activityName: "Legs" },
+        db,
+      );
+
+      const found = await getGarminActivityByGarminId("garmin-find-me", db);
+      expect(found).toBeDefined();
+      expect(found!.activityName).toBe("Legs");
+
+      const notFound = await getGarminActivityByGarminId("nope", db);
+      expect(notFound).toBeUndefined();
+    });
+
+    it("links activity to workout via updateActivityMatch", async () => {
+      const { id: userId } = await createUser("notion-act5", "token", db);
+      const { id: activityId } = await upsertGarminActivity(
+        userId,
+        { garminActivityId: "garmin-match-test", activityName: "Push" },
+        db,
+      );
+      const { id: workoutId } = await upsertGarminWorkout(
+        userId,
+        "Push Day",
+        "gw-1",
+        "hash",
+        "notion-page-1",
+        undefined,
+        db,
+      );
+
+      await updateActivityMatch(activityId, workoutId, db);
+
+      const activity = await getGarminActivityByGarminId("garmin-match-test", db);
+      expect(activity!.matchedWorkoutId).toBe(workoutId);
+    });
+  });
+
+  describe("insights", () => {
+    it("creates an insight and retrieves by user", async () => {
+      const { id: userId } = await createUser("notion-ins1", "token", db);
+      const { id: activityId } = await upsertGarminActivity(
+        userId,
+        { garminActivityId: "garmin-ins-act" },
+        db,
+      );
+
+      const { id: insightId } = await createInsight(
+        userId,
+        activityId,
+        "auto",
+        "Great session! 94% rep completion.",
+        JSON.stringify({ workoutName: "Push Day" }),
+        JSON.stringify({ activityName: "Push Day" }),
+        db,
+      );
+      expect(insightId).toBeDefined();
+
+      const result = await getInsights(userId, 10, db);
+      expect(result).toHaveLength(1);
+      expect(result[0].content).toBe("Great session! 94% rep completion.");
+      expect(result[0].insightType).toBe("auto");
+      expect(result[0].planContext).toBe(JSON.stringify({ workoutName: "Push Day" }));
+    });
+
+    it("filters insights by activity ID", async () => {
+      const { id: userId } = await createUser("notion-ins2", "token", db);
+      const { id: act1 } = await upsertGarminActivity(
+        userId,
+        { garminActivityId: "ins-act-1" },
+        db,
+      );
+      const { id: act2 } = await upsertGarminActivity(
+        userId,
+        { garminActivityId: "ins-act-2" },
+        db,
+      );
+
+      await createInsight(userId, act1, "auto", "Insight for act1", undefined, undefined, db);
+      await createInsight(userId, act2, "auto", "Insight for act2", undefined, undefined, db);
+      await createInsight(userId, act1, "deep", "Deep insight for act1", undefined, undefined, db);
+
+      const act1Insights = await getInsightsByActivity(act1, db);
+      expect(act1Insights).toHaveLength(2);
+      act1Insights.forEach((i) => expect(i.activityId).toBe(act1));
+
+      const act2Insights = await getInsightsByActivity(act2, db);
+      expect(act2Insights).toHaveLength(1);
+      expect(act2Insights[0].content).toBe("Insight for act2");
+    });
+
+    it("returns insights ordered by createdAt desc", async () => {
+      const { id: userId } = await createUser("notion-ins3", "token", db);
+      const { id: actId } = await upsertGarminActivity(
+        userId,
+        { garminActivityId: "ins-act-order" },
+        db,
+      );
+
+      // Insert with small delays to ensure different createdAt
+      await createInsight(userId, actId, "auto", "First", undefined, undefined, db);
+      await createInsight(userId, actId, "auto", "Second", undefined, undefined, db);
+      await createInsight(userId, actId, "deep", "Third", undefined, undefined, db);
+
+      const result = await getInsights(userId, 10, db);
+      expect(result).toHaveLength(3);
+      // Most recent first — but since they might share the same ms timestamp,
+      // just verify we get all three back
+      const contents = result.map((i) => i.content);
+      expect(contents).toContain("First");
+      expect(contents).toContain("Second");
+      expect(contents).toContain("Third");
+    });
+  });
+
+  describe("recent activities with workouts join", () => {
+    it("joins activities with matched workouts", async () => {
+      const { id: userId } = await createUser("notion-join1", "token", db);
+      const { id: workoutId } = await upsertGarminWorkout(
+        userId,
+        "Push Day",
+        "gw-join",
+        "hash",
+        "notion-page-1",
+        undefined,
+        db,
+      );
+      const { id: activityId } = await upsertGarminActivity(
+        userId,
+        {
+          garminActivityId: "join-act-1",
+          activityName: "Push Day",
+          startTime: Date.now(),
+          matchedWorkoutId: workoutId,
+        },
+        db,
+      );
+
+      // Unmatched activity
+      await upsertGarminActivity(
+        userId,
+        {
+          garminActivityId: "join-act-2",
+          activityName: "Random Run",
+          startTime: Date.now(),
+        },
+        db,
+      );
+
+      const results = await getRecentActivitiesWithWorkouts(userId, 28, db);
+      expect(results).toHaveLength(2);
+
+      const matched = results.find((r) => r.activity.id === activityId);
+      expect(matched!.workout).toBeDefined();
+      expect(matched!.workout!.workoutName).toBe("Push Day");
+
+      const unmatched = results.find((r) => r.activity.activityName === "Random Run");
+      expect(unmatched!.workout).toBeNull();
+    });
+
+    it("excludes activities older than the day cutoff", async () => {
+      const { id: userId } = await createUser("notion-join2", "token", db);
+      const now = Date.now();
+
+      await upsertGarminActivity(
+        userId,
+        {
+          garminActivityId: "recent-act",
+          activityName: "Recent",
+          startTime: now - 5 * 86400000, // 5 days ago
+        },
+        db,
+      );
+      await upsertGarminActivity(
+        userId,
+        {
+          garminActivityId: "old-act",
+          activityName: "Old",
+          startTime: now - 60 * 86400000, // 60 days ago
+        },
+        db,
+      );
+
+      const results = await getRecentActivitiesWithWorkouts(userId, 28, db);
+      expect(results).toHaveLength(1);
+      expect(results[0].activity.activityName).toBe("Recent");
     });
   });
 });

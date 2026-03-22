@@ -10,8 +10,13 @@ import {
   getGarminWorkouts,
   getNotionPages,
   getUserById,
+  getInsights,
+  getGarminActivities,
 } from "@/lib/db/queries";
 import { decrypt } from "@/lib/utils/crypto";
+import { InsightFeed } from "@/components/dashboard/insight-feed";
+import { PerformanceWidget } from "@/components/dashboard/performance-widget";
+import { StreakWidget } from "@/components/dashboard/streak-widget";
 
 export default async function DashboardPage() {
   const session = await getServerSession();
@@ -24,11 +29,14 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [garminConn, notionPageRows, workoutRows] = await Promise.all([
-    getGarminConnection(session.userId),
-    getNotionPages(session.userId),
-    getGarminWorkouts(session.userId),
-  ]);
+  const [garminConn, notionPageRows, workoutRows, insightRows, activityRows] =
+    await Promise.all([
+      getGarminConnection(session.userId),
+      getNotionPages(session.userId),
+      getGarminWorkouts(session.userId),
+      getInsights(session.userId, 5),
+      getGarminActivities(session.userId, 20),
+    ]);
 
   const needsOnboarding = notionPageRows.length === 0 || !garminConn;
 
@@ -56,6 +64,21 @@ export default async function DashboardPage() {
     garminWorkoutId: w.garminWorkoutId,
     lastPushedAt: w.lastPushedAt,
     notionPageId: w.notionPageId,
+  }));
+
+  const insights = insightRows.map((i) => ({
+    id: i.id,
+    insightType: i.insightType,
+    content: i.content,
+    createdAt: i.createdAt,
+    activityId: i.activityId,
+  }));
+
+  const activities = activityRows.map((a) => ({
+    activityName: a.activityName,
+    rawData: a.rawData,
+    startTime: a.startTime,
+    matchedWorkoutId: a.matchedWorkoutId,
   }));
 
   return (
@@ -88,9 +111,26 @@ export default async function DashboardPage() {
         garminEmail={garminEmail}
       />
 
-      {workouts.length > 0 && <ThisWeek workouts={workouts} />}
+      {workouts.length > 0 && (
+        <ThisWeek workouts={workouts} activities={activities} />
+      )}
 
-      <WorkoutList workouts={workouts} notionPages={notionPages} />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <InsightFeed insights={insights} />
+        </div>
+        <div>
+          <PerformanceWidget activities={activities} />
+        </div>
+      </div>
+
+      <StreakWidget activities={activities} workoutCount={workouts.length} />
+
+      <WorkoutList
+        workouts={workouts}
+        notionPages={notionPages}
+        garminConnected={!!garminConn}
+      />
     </div>
   );
 }

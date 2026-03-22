@@ -12,8 +12,15 @@ interface Workout {
   lastPushedAt: number | null;
 }
 
+interface Activity {
+  activityName: string | null;
+  startTime: number | null;
+  matchedWorkoutId: string | null;
+}
+
 interface ThisWeekProps {
   workouts: Workout[];
+  activities?: Activity[];
 }
 
 /**
@@ -45,7 +52,7 @@ function matchDay(workoutName: string): string | null {
   return null;
 }
 
-export function ThisWeek({ workouts }: ThisWeekProps) {
+export function ThisWeek({ workouts, activities = [] }: ThisWeekProps) {
   // Build a map of day -> workout
   const dayWorkouts = new Map<string, Workout>();
   const unmatchedWorkouts: Workout[] = [];
@@ -56,6 +63,14 @@ export function ThisWeek({ workouts }: ThisWeekProps) {
       dayWorkouts.set(day, w);
     } else {
       unmatchedWorkouts.push(w);
+    }
+  }
+
+  // Build a set of completed workout IDs from activities
+  const completedWorkoutIds = new Set<string>();
+  for (const a of activities) {
+    if (a.matchedWorkoutId) {
+      completedWorkoutIds.add(a.matchedWorkoutId);
     }
   }
 
@@ -72,7 +87,7 @@ export function ThisWeek({ workouts }: ThisWeekProps) {
   return (
     <div className="flex flex-col gap-3">
       <h2 className="text-lg font-semibold">This Week</h2>
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
         {DAYS.map((day) => {
           const workout = dayWorkouts.get(day);
           return (
@@ -94,11 +109,15 @@ export function ThisWeek({ workouts }: ThisWeekProps) {
                         .trim()
                         .replace(/^[-—:]\s*/, "") || workout.workoutName}
                     </span>
-                    {workout.garminWorkoutId ? (
+                    {completedWorkoutIds.has(workout.id) ? (
                       <Badge
                         variant="secondary"
                         className="mt-1 text-[10px] bg-green-600/10 text-green-700 dark:text-green-400"
                       >
+                        Done
+                      </Badge>
+                    ) : workout.garminWorkoutId ? (
+                      <Badge variant="secondary" className="mt-1 text-[10px]">
                         Synced
                       </Badge>
                     ) : (

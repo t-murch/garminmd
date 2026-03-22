@@ -22,6 +22,13 @@
       "when": 1774101861079,
       "tag": "0002_military_christian_walker",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1774116102526,
+      "tag": "0003_perfect_ser_duncan",
+      "breakpoints": true
     }
   ]
 }

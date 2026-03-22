@@ -98,9 +98,10 @@ export interface ResolvedWorkout extends Omit<ParsedWorkout, "exercises"> {
 /** Matches Garmin's internal workout step JSON structure */
 export interface GarminWorkoutStep {
   stepOrder: number;
+  type?: "ExecutableStepDTO";
   stepType: {
     stepTypeId: number;
-    stepTypeKey: "warmup" | "interval" | "rest" | "cooldown" | "recover";
+    stepTypeKey: "warmup" | "interval" | "rest" | "cooldown" | "recovery" | "repeat";
   };
   exerciseCategory?: {
     category: string;
@@ -108,11 +109,25 @@ export interface GarminWorkoutStep {
   };
   weightValue?: { value: number }; // kg
   endCondition: {
-    conditionTypeKey: "repetitions" | "time" | "lap.button";
+    conditionTypeKey: "repetitions" | "reps" | "time" | "lap.button" | "iterations";
   };
   endConditionValue?: number;
   description?: string;
 }
+
+/** A repeat group that wraps exercise + rest steps for N sets */
+export interface GarminRepeatGroup {
+  stepOrder: number;
+  stepType: { stepTypeId: 6; stepTypeKey: "repeat" };
+  numberOfIterations: number;
+  smartRepeat: boolean;
+  endCondition: { conditionTypeKey: "iterations" };
+  type: "RepeatGroupDTO";
+  workoutSteps: GarminWorkoutStep[];
+}
+
+/** A workout step or repeat group */
+export type GarminWorkoutStepOrGroup = GarminWorkoutStep | GarminRepeatGroup;
 
 /** The full payload sent to Garmin Connect createWorkout() */
 export interface GarminWorkoutPayload {
@@ -128,7 +143,7 @@ export interface GarminWorkoutPayload {
       sportTypeId: number;
       sportTypeKey: string;
     };
-    workoutSteps: GarminWorkoutStep[];
+    workoutSteps: GarminWorkoutStepOrGroup[];
   }>;
 }
 
@@ -206,4 +221,66 @@ export interface SyncState {
     lastUploadedAt: string;
     contentHash: string; // hash of the workout payload for change detection
   }>;
+}
+
+// ── Phase 2: Activity + Insight types ──
+
+export interface ExerciseSetData {
+  exerciseName: string | null;
+  category: string | null;
+  reps: number | null;
+  weight: number | null;
+  weightUnit: string | null;
+  duration: number | null;
+  setOrder: number;
+}
+
+export interface GarminActivityData {
+  activityId: number;
+  activityName: string;
+  startTimeLocal: string;
+  duration: number;
+  activityType: string;
+  totalSets: number | null;
+  activeSets: number | null;
+  totalReps: number | null;
+  calories: number | null;
+  averageHR: number | null;
+  exerciseSets: ExerciseSetData[];
+}
+
+export interface PlanContext {
+  workoutName: string;
+  exercises: Array<{
+    name: string;
+    sets: number;
+    reps: number | null;
+    weight: number | null;
+    weightUnit: string | null;
+  }>;
+}
+
+export interface ActualContext {
+  activityName: string;
+  duration: number;
+  totalReps: number | null;
+  exerciseSets: ExerciseSetData[];
+}
+
+export interface MatchResult {
+  activityId: string;
+  workoutId: string;
+  workoutName: string;
+  confidence: number;
+  matchMethod: "exact-name" | "fuzzy-name" | "date-proximity";
+}
+
+export interface AutoInsightResult {
+  insights: Array<{ type: string; message: string }>;
+  raw: string;
+}
+
+export interface DeepAnalysisResult {
+  sections: Array<{ title: string; content: string; type: string }>;
+  raw: string;
 }

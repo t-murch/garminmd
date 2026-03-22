@@ -1,0 +1,14 @@
+services:
+  garminmd:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - garminmd-data:/app/data/db
+    environment:
+      - DATABASE_URL=file:/app/data/db/garminmd.db
+
+volumes:
+  garminmd-data:

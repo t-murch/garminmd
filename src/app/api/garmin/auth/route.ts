@@ -66,6 +66,7 @@ export async function POST(request: Request) {
 
   // Persist encrypted credentials and session tokens
   const encryptedEmail = encrypt(email);
+  const encryptedPassword = encrypt(password);
   const sessionTokens = garminClient.getSessionTokens();
   const encryptedSession = encrypt(JSON.stringify(sessionTokens));
 
@@ -73,6 +74,7 @@ export async function POST(request: Request) {
     session.userId,
     encryptedEmail,
     encryptedSession,
+    encryptedPassword,
   );
 
   return NextResponse.json({ success: true });
